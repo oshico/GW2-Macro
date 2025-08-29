@@ -1,0 +1,3 @@
+/usr/bin/cmake -E rm -f CMakeFiles/NexusAddonTemplate.dir/objects.a
+/usr/bin/x86_64-w64-mingw32-ar qc CMakeFiles/NexusAddonTemplate.dir/objects.a @CMakeFiles/NexusAddonTemplate.dir/objects1
+x86_64-w64-mingw32-g++  -static-libgcc -static-libstdc++ -Wl,--export-all-symbols  -static-libgcc -static-libstdc++ -Wl,--kill-at -shared -o bin/NexusAddonTemplate.dll -Wl,--out-implib,libNexusAddonTemplate.dll.a -Wl,--major-image-version,0,--minor-image-version,0 -Wl,--whole-archive CMakeFiles/NexusAddonTemplate.dir/objects.a -Wl,--no-whole-archive @CMakeFiles/NexusAddonTemplate.dir/linkLibs.rsp
