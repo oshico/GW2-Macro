@@ -1,3 +1,0 @@
-/home/oshico/Projects/Addon/build/CMakeFiles/Macro.dir
-/home/oshico/Projects/Addon/build/CMakeFiles/edit_cache.dir
-/home/oshico/Projects/Addon/build/CMakeFiles/rebuild_cache.dir
