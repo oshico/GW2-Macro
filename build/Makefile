@@ -117,24 +117,24 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named NexusAddonTemplate
+# Target rules for targets named Macro
 
 # Build rule for target.
-NexusAddonTemplate: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 NexusAddonTemplate
-.PHONY : NexusAddonTemplate
+Macro: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Macro
+.PHONY : Macro
 
 # fast build rule for target.
-NexusAddonTemplate/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/NexusAddonTemplate.dir/build.make CMakeFiles/NexusAddonTemplate.dir/build
-.PHONY : NexusAddonTemplate/fast
+Macro/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/build
+.PHONY : Macro/fast
 
 src/Shared.obj: src/Shared.cpp.obj
 .PHONY : src/Shared.obj
 
 # target to build an object file
 src/Shared.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/NexusAddonTemplate.dir/build.make CMakeFiles/NexusAddonTemplate.dir/src/Shared.cpp.obj
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/Shared.cpp.obj
 .PHONY : src/Shared.cpp.obj
 
 src/Shared.i: src/Shared.cpp.i
@@ -142,7 +142,7 @@ src/Shared.i: src/Shared.cpp.i
 
 # target to preprocess a source file
 src/Shared.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/NexusAddonTemplate.dir/build.make CMakeFiles/NexusAddonTemplate.dir/src/Shared.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/Shared.cpp.i
 .PHONY : src/Shared.cpp.i
 
 src/Shared.s: src/Shared.cpp.s
@@ -150,15 +150,111 @@ src/Shared.s: src/Shared.cpp.s
 
 # target to generate assembly for a file
 src/Shared.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/NexusAddonTemplate.dir/build.make CMakeFiles/NexusAddonTemplate.dir/src/Shared.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/Shared.cpp.s
 .PHONY : src/Shared.cpp.s
+
+src/imgui.obj: src/imgui.cpp.obj
+.PHONY : src/imgui.obj
+
+# target to build an object file
+src/imgui.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui.cpp.obj
+.PHONY : src/imgui.cpp.obj
+
+src/imgui.i: src/imgui.cpp.i
+.PHONY : src/imgui.i
+
+# target to preprocess a source file
+src/imgui.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui.cpp.i
+.PHONY : src/imgui.cpp.i
+
+src/imgui.s: src/imgui.cpp.s
+.PHONY : src/imgui.s
+
+# target to generate assembly for a file
+src/imgui.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui.cpp.s
+.PHONY : src/imgui.cpp.s
+
+src/imgui_draw.obj: src/imgui_draw.cpp.obj
+.PHONY : src/imgui_draw.obj
+
+# target to build an object file
+src/imgui_draw.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui_draw.cpp.obj
+.PHONY : src/imgui_draw.cpp.obj
+
+src/imgui_draw.i: src/imgui_draw.cpp.i
+.PHONY : src/imgui_draw.i
+
+# target to preprocess a source file
+src/imgui_draw.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui_draw.cpp.i
+.PHONY : src/imgui_draw.cpp.i
+
+src/imgui_draw.s: src/imgui_draw.cpp.s
+.PHONY : src/imgui_draw.s
+
+# target to generate assembly for a file
+src/imgui_draw.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui_draw.cpp.s
+.PHONY : src/imgui_draw.cpp.s
+
+src/imgui_tables.obj: src/imgui_tables.cpp.obj
+.PHONY : src/imgui_tables.obj
+
+# target to build an object file
+src/imgui_tables.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui_tables.cpp.obj
+.PHONY : src/imgui_tables.cpp.obj
+
+src/imgui_tables.i: src/imgui_tables.cpp.i
+.PHONY : src/imgui_tables.i
+
+# target to preprocess a source file
+src/imgui_tables.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui_tables.cpp.i
+.PHONY : src/imgui_tables.cpp.i
+
+src/imgui_tables.s: src/imgui_tables.cpp.s
+.PHONY : src/imgui_tables.s
+
+# target to generate assembly for a file
+src/imgui_tables.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui_tables.cpp.s
+.PHONY : src/imgui_tables.cpp.s
+
+src/imgui_widgets.obj: src/imgui_widgets.cpp.obj
+.PHONY : src/imgui_widgets.obj
+
+# target to build an object file
+src/imgui_widgets.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui_widgets.cpp.obj
+.PHONY : src/imgui_widgets.cpp.obj
+
+src/imgui_widgets.i: src/imgui_widgets.cpp.i
+.PHONY : src/imgui_widgets.i
+
+# target to preprocess a source file
+src/imgui_widgets.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui_widgets.cpp.i
+.PHONY : src/imgui_widgets.cpp.i
+
+src/imgui_widgets.s: src/imgui_widgets.cpp.s
+.PHONY : src/imgui_widgets.s
+
+# target to generate assembly for a file
+src/imgui_widgets.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/imgui_widgets.cpp.s
+.PHONY : src/imgui_widgets.cpp.s
 
 src/main.obj: src/main.cpp.obj
 .PHONY : src/main.obj
 
 # target to build an object file
 src/main.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/NexusAddonTemplate.dir/build.make CMakeFiles/NexusAddonTemplate.dir/src/main.cpp.obj
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/main.cpp.obj
 .PHONY : src/main.cpp.obj
 
 src/main.i: src/main.cpp.i
@@ -166,7 +262,7 @@ src/main.i: src/main.cpp.i
 
 # target to preprocess a source file
 src/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/NexusAddonTemplate.dir/build.make CMakeFiles/NexusAddonTemplate.dir/src/main.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/main.cpp.i
 .PHONY : src/main.cpp.i
 
 src/main.s: src/main.cpp.s
@@ -174,7 +270,7 @@ src/main.s: src/main.cpp.s
 
 # target to generate assembly for a file
 src/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/NexusAddonTemplate.dir/build.make CMakeFiles/NexusAddonTemplate.dir/src/main.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
 # Help Target
@@ -185,10 +281,22 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... NexusAddonTemplate"
+	@echo "... Macro"
 	@echo "... src/Shared.obj"
 	@echo "... src/Shared.i"
 	@echo "... src/Shared.s"
+	@echo "... src/imgui.obj"
+	@echo "... src/imgui.i"
+	@echo "... src/imgui.s"
+	@echo "... src/imgui_draw.obj"
+	@echo "... src/imgui_draw.i"
+	@echo "... src/imgui_draw.s"
+	@echo "... src/imgui_tables.obj"
+	@echo "... src/imgui_tables.i"
+	@echo "... src/imgui_tables.s"
+	@echo "... src/imgui_widgets.obj"
+	@echo "... src/imgui_widgets.i"
+	@echo "... src/imgui_widgets.s"
 	@echo "... src/main.obj"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

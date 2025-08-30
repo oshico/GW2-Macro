@@ -132,5 +132,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/NexusAddonTemplate.dir/DependInfo.cmake"
+  "CMakeFiles/Macro.dir/DependInfo.cmake"
   )

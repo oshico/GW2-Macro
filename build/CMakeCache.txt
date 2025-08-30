@@ -22,7 +22,7 @@ CMAKE_AR:FILEPATH=/usr/bin/x86_64-w64-mingw32-ar
 
 //Choose the type of build, options are: None Debug Release RelWithDebInfo
 // MinSizeRel ...
-CMAKE_BUILD_TYPE:STRING=
+CMAKE_BUILD_TYPE:STRING=Release
 
 //Enable/Disable color output during build.
 CMAKE_COLOR_MAKEFILE:BOOL=ON
@@ -157,7 +157,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=NexusAddonTemplate
+CMAKE_PROJECT_NAME:STATIC=Macro
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/x86_64-w64-mingw32-ranlib
@@ -243,13 +243,13 @@ CMAKE_SYSTEM_NAME:UNINITIALIZED=Windows
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
 //Value Computed by CMake
-NexusAddonTemplate_BINARY_DIR:STATIC=/home/oshico/Projects/Addon/build
+Macro_BINARY_DIR:STATIC=/home/oshico/Projects/Addon/build
 
 //Value Computed by CMake
-NexusAddonTemplate_IS_TOP_LEVEL:STATIC=ON
+Macro_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
-NexusAddonTemplate_SOURCE_DIR:STATIC=/home/oshico/Projects/Addon
+Macro_SOURCE_DIR:STATIC=/home/oshico/Projects/Addon
 
 
 ########################

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(NexusAddonTemplate)
+project(Macro)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -21,12 +21,22 @@ endif()
 set(SOURCES
     src/main.cpp
     src/Shared.cpp
+    src/imgui_draw.cpp
+    src/imgui_tables.cpp
+    src/imgui_widgets.cpp
+    src/imgui.cpp
 )
 
 # Headers
 set(HEADERS
     include/Nexus.h
     include/Shared.h
+    include/imgui.h
+    include/imgui_internal.h
+    include/imconfig.h
+    include/imstb_rectpack.h
+    include/imstb_textedit.h
+    include/imstb_truetype.h
 )
 
 # Include directories
@@ -65,8 +75,8 @@ endif()
 
 # Define version info (optional)
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-    ADDON_VERSION_MAJOR=1
-    ADDON_VERSION_MINOR=0
+    ADDON_VERSION_MAJOR=0
+    ADDON_VERSION_MINOR=1
     ADDON_VERSION_BUILD=0
-    ADDON_VERSION_REVISION=1
+    ADDON_VERSION_REVISION=0
 )

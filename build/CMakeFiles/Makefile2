@@ -63,7 +63,7 @@ CMAKE_BINARY_DIR = /home/oshico/Projects/Addon/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/NexusAddonTemplate.dir/all
+all: CMakeFiles/Macro.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -71,34 +71,34 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/NexusAddonTemplate.dir/clean
+clean: CMakeFiles/Macro.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/NexusAddonTemplate.dir
+# Target rules for target CMakeFiles/Macro.dir
 
 # All Build rule for target.
-CMakeFiles/NexusAddonTemplate.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/NexusAddonTemplate.dir/build.make CMakeFiles/NexusAddonTemplate.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/NexusAddonTemplate.dir/build.make CMakeFiles/NexusAddonTemplate.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oshico/Projects/Addon/build/CMakeFiles --progress-num=1,2,3 "Built target NexusAddonTemplate"
-.PHONY : CMakeFiles/NexusAddonTemplate.dir/all
+CMakeFiles/Macro.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oshico/Projects/Addon/build/CMakeFiles --progress-num=1,2,3,4,5,6,7 "Built target Macro"
+.PHONY : CMakeFiles/Macro.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/NexusAddonTemplate.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/oshico/Projects/Addon/build/CMakeFiles 3
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/NexusAddonTemplate.dir/all
+CMakeFiles/Macro.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oshico/Projects/Addon/build/CMakeFiles 7
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/Macro.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/oshico/Projects/Addon/build/CMakeFiles 0
-.PHONY : CMakeFiles/NexusAddonTemplate.dir/rule
+.PHONY : CMakeFiles/Macro.dir/rule
 
 # Convenience name for target.
-NexusAddonTemplate: CMakeFiles/NexusAddonTemplate.dir/rule
-.PHONY : NexusAddonTemplate
+Macro: CMakeFiles/Macro.dir/rule
+.PHONY : Macro
 
 # clean rule for target.
-CMakeFiles/NexusAddonTemplate.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/NexusAddonTemplate.dir/build.make CMakeFiles/NexusAddonTemplate.dir/clean
-.PHONY : CMakeFiles/NexusAddonTemplate.dir/clean
+CMakeFiles/Macro.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Macro.dir/build.make CMakeFiles/Macro.dir/clean
+.PHONY : CMakeFiles/Macro.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

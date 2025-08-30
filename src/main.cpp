@@ -1,164 +1,233 @@
 #include "Shared.h"
+#include "Nexus.h"
+#include "imgui.h"
 #include <cstring>
 
-//==================================================================================================
 // Addon Definition Structure
-//==================================================================================================
 AddonDefinition_t AddonDef{};
 
-//==================================================================================================
 // Required Export: GetAddonDef
-// This function MUST be exported and is called by Nexus to get addon information
-//==================================================================================================
-extern "C" __declspec(dllexport) AddonDefinition_t* GetAddonDef()
+extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef()
 {
-    AddonDef.Signature = -12345;                               // Negative ID for non-Raidcore addons
-    AddonDef.APIVersion = NEXUS_API_VERSION;                   // Use API version 6
-    AddonDef.Name = "Nexus Addon Template";
-    AddonDef.Version.Major = 1;
-    AddonDef.Version.Minor = 0; 
+    AddonDef.Signature = -12345;
+    AddonDef.APIVersion = NEXUS_API_VERSION;
+    AddonDef.Name = "Macro";
+    AddonDef.Version.Major = 0;
+    AddonDef.Version.Minor = 1;
     AddonDef.Version.Build = 0;
-    AddonDef.Version.Revision = 1;
-    AddonDef.Author = "Your Name";
-    AddonDef.Description = "A barebones template addon for Nexus.";
+    AddonDef.Version.Revision = 0;
+    AddonDef.Author = "oshico";
+    AddonDef.Description = "A macro keybind manager for executing sequences of game actions.";
     AddonDef.Load = AddonLoad;
     AddonDef.Unload = AddonUnload;
     AddonDef.Flags = AF_None;
-    
-    // Update settings (optional)
-    AddonDef.Provider = UP_None;                               // No auto-updates
+    AddonDef.Provider = UP_None;
     AddonDef.UpdateLink = nullptr;
 
     return &AddonDef;
 }
 
-//==================================================================================================
 // Addon Load Function
-// Called when the addon is loaded
-//==================================================================================================
-void AddonLoad(AddonAPI_t* aApi)
+void AddonLoad(AddonAPI_t *aApi)
 {
-    // Store the API pointer globally
     APIDefs = aApi;
+    APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Keybind Manager loaded!");
 
-    // Required ImGui setup if using ImGui rendering
-    // ImGui::SetCurrentContext((ImGuiContext*)APIDefs->ImguiContext);
-    // ImGui::SetAllocatorFunctions((void* (*)(size_t, void*))APIDefs->ImguiMalloc, 
-    //                             (void(*)(void*, void*))APIDefs->ImguiFree);
+    if (APIDefs->ImguiContext)
+    {
+        ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
+    }
 
-    // Log addon load
-    APIDefs->Log(LOGL_INFO, "NexusTemplate", "Template addon loaded successfully!");
-
-    // Register render callbacks
     APIDefs->GUI_Register(RT_Render, AddonRender);
     APIDefs->GUI_Register(RT_OptionsRender, AddonOptions);
-
-    // Setup keybinds and events
     SetupKeybinds();
-    SetupEvents();
-
-    // Example: Get Mumble data (optional)
-    // MumbleLink* mumble = (MumbleLink*)APIDefs->DataLink_Get(DL_MUMBLE_LINK);
-    // NexusLinkData_t* nexusLink = (NexusLinkData_t*)APIDefs->DataLink_Get(DL_NEXUS_LINK);
 }
 
-//==================================================================================================
-// Addon Unload Function  
-// Called when the addon is unloaded or game shuts down
-//==================================================================================================
+// Addon Unload Function
 void AddonUnload()
 {
-    // Cleanup: Remove render callbacks
     if (APIDefs)
     {
+        for (const auto &keybind : g_keybinds)
+        {
+            UnregisterKeybind(keybind.identifier);
+        }
+
         APIDefs->GUI_Deregister(AddonRender);
         APIDefs->GUI_Deregister(AddonOptions);
-        
-        // Remove keybinds
-        APIDefs->InputBinds_Deregister("KB_TEMPLATE_TEST");
-        
-        // Unsubscribe from events
-        APIDefs->Events_Unsubscribe(EV_MUMBLE_IDENTITY_UPDATED, HandleExampleEvent);
-        
-        APIDefs->Log(LOGL_INFO, "NexusTemplate", "Template addon unloaded successfully!");
+        APIDefs->InputBinds_Deregister("KB_SHOW_WINDOW");
+        APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Manager unloaded!");
     }
 }
 
-//==================================================================================================
-// Main Render Callback
-// Called every frame during the render phase
-//==================================================================================================
-void AddonRender()
-{
-    // Your main UI rendering code goes here
-    // Example:
-    // ImGui::Begin("Template Window");
-    // ImGui::Text("Hello from Nexus Template!");
-    // ImGui::End();
-}
-
-//==================================================================================================
-// Options Render Callback
-// Called when drawing in the addon options/settings window
-//==================================================================================================
-void AddonOptions()
-{
-    // Your addon settings/options UI goes here
-    // This appears in the Nexus options window
-    
-    // Example:
-    // static bool exampleSetting = false;
-    // ImGui::Checkbox("Example Setting", &exampleSetting);
-    // ImGui::Text("Template Addon v1.0.0");
-}
-
-//==================================================================================================
 // Keybind Handler
-// Called when registered keybinds are pressed/released
-//==================================================================================================
-void ProcessKeybind(const char* aIdentifier, bool aIsRelease)
+void ProcessKeybind(const char *aIdentifier, bool aIsRelease)
 {
-    if (!aIsRelease) // Only process on key press, not release
+    if (aIsRelease)
+        return;
+
+    if (strcmp(aIdentifier, "KB_SHOW_WINDOW") == 0)
     {
-        if (strcmp(aIdentifier, "KB_TEMPLATE_TEST") == 0)
+        g_showKeybindWindow = !g_showKeybindWindow;
+        return;
+    }
+
+    for (const auto &keybind : g_keybinds)
+    {
+        if (keybind.identifier == aIdentifier && keybind.enabled)
         {
-            APIDefs->Log(LOGL_INFO, "NexusTemplate", "Test keybind pressed!");
-            APIDefs->GUI_SendAlert("Template addon test keybind activated!");
+            APIDefs->Log(LOGL_INFO, "MacroManager",
+                         ("Executing macro: " + keybind.name).c_str());
+            ExecuteKeyActions();
+            break;
         }
     }
 }
 
-//==================================================================================================
-// Event Handler
-// Called when subscribed events are raised
-//==================================================================================================
-void HandleExampleEvent(void* aEventArgs)
+// Main Render Callback
+void AddonRender()
 {
-    // Handle the event
-    // For Mumble identity updates, aEventArgs would be MumbleIdentity*
-    // Suppress unused parameter warning since this is just a template
-    (void)aEventArgs;
-    
-    APIDefs->Log(LOGL_DEBUG, "NexusTemplate", "Received example event");
+    if (g_showKeybindWindow)
+    {
+        ImGui::SetNextWindowSize(ImVec2(550, 450), ImGuiCond_FirstUseEver);
+        if (ImGui::Begin("Macro Manager", &g_showKeybindWindow))
+        {
+            ImGui::Text("Current Macros:");
+            ImGui::Separator();
+
+            // Display existing macros
+            for (size_t i = 0; i < g_keybinds.size(); ++i)
+            {
+                auto &keybind = g_keybinds[i];
+                ImGui::PushID(static_cast<int>(i + 1000));
+
+                ImGui::Checkbox("##Enabled", &keybind.enabled);
+                ImGui::SameLine();
+                ImGui::Text("%s: %s", keybind.name.c_str(), keybind.keyCombo.c_str());
+
+                ImGui::SameLine();
+                if (ImGui::SmallButton("Delete"))
+                {
+                    DeleteMacro(i);
+                    i--; // Adjust index after deletion
+                }
+
+                ImGui::PopID();
+            }
+
+            ImGui::Separator();
+            ImGui::Text("Current Key Sequence:");
+
+            // Display current key sequence
+            for (size_t i = 0; i < g_keyActions.size(); ++i)
+            {
+                const auto &action = g_keyActions[i];
+                ImGui::PushID(static_cast<int>(i + 2000));
+
+                ImGui::Text("  %s %s (%dms delay)",
+                            action.isKeyDown ? "PRESS" : "RELEASE",
+                            GetBindName(action.gameBind),
+                            action.delayMs);
+
+                ImGui::SameLine();
+                if (ImGui::SmallButton("X"))
+                {
+                    DeleteKeyAction(i);
+                    i--; // Adjust index after deletion
+                }
+
+                ImGui::PopID();
+            }
+
+            ImGui::Separator();
+            ImGui::Text("Add Key to Sequence:");
+
+            // Static variables for the GUI form
+            static EGameBinds selectedBind = GB_SkillWeapon1;
+            static bool isKeyDown = true;
+            static int delayMs = 0;
+            static char macroName[128] = "New Macro";
+            static char triggerCombo[128] = "CTRL+SHIFT+";
+
+            // Available game binds
+            const char *bindNames[] = {
+                "Weapon 1", "Weapon 2", "Weapon 3", "Weapon 4", "Weapon 5",
+                "Heal Skill", "Utility 1", "Utility 2", "Utility 3", "Elite Skill",
+                "Dodge", "Jump", "Interact", "Weapon Swap"};
+
+            EGameBinds bindValues[] = {
+                GB_SkillWeapon1, GB_SkillWeapon2, GB_SkillWeapon3, GB_SkillWeapon4, GB_SkillWeapon5,
+                GB_SkillHeal, GB_SkillUtility1, GB_SkillUtility2, GB_SkillUtility3, GB_SkillElite,
+                GB_MoveDodge, GB_MoveJump_SwimUp_FlyUp, GB_MiscInteract, GB_SkillWeaponSwap};
+
+            static int bindIndex = 0;
+
+            if (ImGui::Combo("Game Action", &bindIndex, bindNames, IM_ARRAYSIZE(bindNames)))
+            {
+                selectedBind = bindValues[bindIndex];
+            }
+
+            ImGui::Checkbox("Press (uncheck for Release)", &isKeyDown);
+            ImGui::InputInt("Delay (ms)", &delayMs);
+
+            if (ImGui::Button("Add to Sequence"))
+            {
+                g_keyActions.emplace_back(selectedBind, isKeyDown, delayMs);
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("Clear All"))
+            {
+                ClearKeySequence();
+            }
+
+            ImGui::Separator();
+            ImGui::InputText("Macro Name", macroName, sizeof(macroName));
+            ImGui::InputText("Trigger Combo", triggerCombo, sizeof(triggerCombo));
+
+            if (ImGui::Button("Save Macro"))
+            {
+                if (SaveMacro(macroName, triggerCombo))
+                {
+                    // Reset form on successful save
+                    strcpy(macroName, "New Macro");
+                    strcpy(triggerCombo, "CTRL+SHIFT+");
+                }
+            }
+        }
+        ImGui::End();
+    }
 }
 
-//==================================================================================================
+// Options Render Callback
+void AddonOptions()
+{
+    ImGui::Text("Macro Keybind Manager v0.1.0");
+    ImGui::Separator();
+
+    if (ImGui::Button("Open Macro Manager"))
+    {
+        g_showKeybindWindow = true;
+    }
+
+    ImGui::Text("Press CTRL+SHIFT+k to toggle window");
+    ImGui::Text("Macros: %d | Key Actions: %d", (int)g_keybinds.size(), (int)g_keyActions.size());
+}
+
 // Setup Functions
-//==================================================================================================
 void SetupKeybinds()
 {
     if (APIDefs)
     {
-        // Register a test keybind (Ctrl+Shift+T by default)
-        APIDefs->InputBinds_RegisterWithString("KB_TEMPLATE_TEST", ProcessKeybind, "CTRL+SHIFT+T");
-    }
-}
+        APIDefs->InputBinds_RegisterWithString("KB_SHOW_WINDOW", ProcessKeybind, "CTRL+SHIFT+K");
 
-void SetupEvents()
-{
-    if (APIDefs)
-    {
-        // Subscribe to Mumble identity updates as an example
-        APIDefs->Events_Subscribe(EV_MUMBLE_IDENTITY_UPDATED, HandleExampleEvent);
+        // Example: Weapon swap combo
+        g_keyActions.emplace_back(GB_SkillWeaponSwap, true, 0);   // Press weapon swap
+        g_keyActions.emplace_back(GB_SkillWeaponSwap, false, 50); // Release weapon swap
+        g_keyActions.emplace_back(GB_SkillWeapon1, true, 100);    // Press weapon 1
+        g_keyActions.emplace_back(GB_SkillWeapon1, false, 50);    // Release weapon 1
+
+        g_keybinds.emplace_back("Weapon Swap + Skill 1", "KB_MACRO_1", "CTRL+SHIFT+1");
+        RegisterKeybind(g_keybinds.back());
     }
 }
