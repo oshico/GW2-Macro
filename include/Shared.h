@@ -5,66 +5,60 @@
 #include <vector>
 #include <string>
 
-// Global API pointer - accessible from all files that include this header
-extern AddonAPI_t* APIDefs;
+// Global API pointer
+extern AddonAPI_t *APIDefs;
 
-// Key Action Structure (moved from main.cpp)
+// Key Action Structure
 struct KeyAction
 {
     EGameBinds gameBind;
     bool isKeyDown;
     int delayMs;
-    
-    KeyAction(EGameBinds bind, bool down, int delay = 0) : gameBind(bind), isKeyDown(down), delayMs(delay) {}
+
+    KeyAction(EGameBinds bind, bool down, int delay = 0)
+        : gameBind(bind), isKeyDown(down), delayMs(delay) {}
 };
 
-// Keybind structure
-struct CustomKeybind
+// Macro structure
+struct Macro
 {
     std::string name;
     std::string identifier;
-    std::string keyCombo;
     bool enabled;
-    
-    CustomKeybind(std::string n, std::string id, std::string combo) 
-        : name(std::move(n)), identifier(std::move(id)), keyCombo(std::move(combo)), enabled(true) {}
+    std::vector<KeyAction> actions;
+
+    Macro(std::string n, std::string id)
+        : name(std::move(n)), identifier(std::move(id)), enabled(true) {}
 };
 
 // Global variables
-extern std::vector<CustomKeybind> g_keybinds;
-extern std::vector<KeyAction> g_keyActions;  // Moved from main.cpp
-extern bool g_showKeybindWindow;
+extern std::vector<Macro> g_macros;
+extern bool g_showMainWindow;
+extern bool g_showMacroEditor;
+extern int g_selectedMacroIndex;
 
-// Function prototypes for the addon lifecycle
-void AddonLoad(AddonAPI_t* aApi);
+
+// Function prototypes
+void AddonLoad(AddonAPI_t *aApi);
 void AddonUnload();
 
-// Render callback prototypes
 void AddonRender();
 void AddonOptions();
 
-// Event handler prototypes  
-void HandleExampleEvent(void* aEventArgs);
+void ProcessKeybind(const char *aIdentifier, bool aIsRelease);
 
-// Keybind handler prototype
-void ProcessKeybind(const char* aIdentifier, bool aIsRelease);
-
-// Setup function prototypes
 void SetupKeybinds();
-void SetupEvents();
 
-// Keybind management
-void RegisterKeybind(const CustomKeybind& keybind);
-void UnregisterKeybind(const std::string& identifier);
+void RegisterKeybind(const Macro &macro);
+void UnregisterKeybind(const std::string &identifier);
 
-// Helper functions (moved from main.cpp)
-const char* GetBindName(EGameBinds bind);
-void ExecuteKeyActions();
+const char *GetBindName(EGameBinds bind);
+void ExecuteMacro(const Macro &macro);
 void DeleteMacro(size_t index);
-void DeleteKeyAction(size_t index);
+void SaveMacro(const std::string &name, int slot, const std::vector<KeyAction> &actions);
 
-// Macro management functions
-bool SaveMacro(const std::string& name, const std::string& keyCombo);
-void ClearKeySequence();
+void RenderMainWindow();
+void RenderMacroEditor();
+void OpenMacroEditor(int index = -1);
 
 #endif // SHARED_H

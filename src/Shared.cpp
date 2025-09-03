@@ -3,125 +3,124 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <cstdint>
+#include <csignal>
+#include <setjmp.h>
 
-// Global variable definitions
 AddonAPI_t* APIDefs = nullptr;
-std::vector<CustomKeybind> g_keybinds;
-std::vector<KeyAction> g_keyActions;  // Moved from main.cpp
-bool g_showKeybindWindow = false;
 
-// Game Bind to String Helper (moved from main.cpp)
+// 10 macro slots
+std::vector<Macro> g_macros = {
+    Macro("Empty", "MACRO_1"), Macro("Empty", "MACRO_2"), Macro("Empty", "MACRO_3"),
+    Macro("Empty", "MACRO_4"), Macro("Empty", "MACRO_5"), Macro("Empty", "MACRO_6"),
+    Macro("Empty", "MACRO_7"), Macro("Empty", "MACRO_8"), Macro("Empty", "MACRO_9"),
+    Macro("Empty", "MACRO_10")
+};
+
+bool g_showMainWindow = false;
+bool g_showMacroEditor = false;
+int g_selectedMacroIndex = -1;
+
+// Helper: convert game bind to string
 const char* GetBindName(EGameBinds bind)
 {
     switch (bind)
     {
-        case GB_SkillWeapon1: return "Weapon 1";
-        case GB_SkillWeapon2: return "Weapon 2";
-        case GB_SkillWeapon3: return "Weapon 3";
-        case GB_SkillWeapon4: return "Weapon 4";
-        case GB_SkillWeapon5: return "Weapon 5";
-        case GB_SkillHeal: return "Heal Skill";
-        case GB_SkillUtility1: return "Utility 1";
-        case GB_SkillUtility2: return "Utility 2";
-        case GB_SkillUtility3: return "Utility 3";
-        case GB_SkillElite: return "Elite Skill";
-        case GB_MoveDodge: return "Dodge";
-        case GB_MoveJump_SwimUp_FlyUp: return "Jump";
-        case GB_MiscInteract: return "Interact";
-        case GB_SkillWeaponSwap: return "Weapon Swap";
-        default: return "Unknown Bind";
+    case GB_SkillWeapon1: return "Weapon 1";
+    case GB_SkillWeapon2: return "Weapon 2";
+    case GB_SkillWeapon3: return "Weapon 3";
+    case GB_SkillWeapon4: return "Weapon 4";
+    case GB_SkillWeapon5: return "Weapon 5";
+    case GB_SkillHeal: return "Heal Skill";
+    case GB_SkillUtility1: return "Utility 1";
+    case GB_SkillUtility2: return "Utility 2";
+    case GB_SkillUtility3: return "Utility 3";
+    case GB_SkillElite: return "Elite Skill";
+    case GB_MoveDodge: return "Dodge";
+    case GB_MoveJump_SwimUp_FlyUp: return "Jump";
+    case GB_MiscInteract: return "Interact";
+    case GB_SkillWeaponSwap: return "Weapon Swap";
+    default: return "Unknown Bind";
     }
 }
 
-// Execute Key Actions (moved from main.cpp)
-void ExecuteKeyActions()
+// Execute a macro
+void ExecuteMacro(const Macro& macro)
 {
-    for (const auto& action : g_keyActions)
+    if (!macro.enabled) return;
+
+    APIDefs->Log(LOGL_INFO, "MacroManager", ("Executing macro: " + macro.name).c_str());
+
+    for (const auto& action : macro.actions)
     {
         if (action.delayMs > 0)
-        {
             std::this_thread::sleep_for(std::chrono::milliseconds(action.delayMs));
-        }
-        
+
         if (action.isKeyDown)
-        {
             APIDefs->GameBinds_PressAsync(action.gameBind);
-        }
         else
-        {
             APIDefs->GameBinds_ReleaseAsync(action.gameBind);
-        }
-        
-        APIDefs->Log(LOGL_DEBUG, "MacroManager", 
-                    ("Key " + std::string(action.isKeyDown ? "PRESS: " : "RELEASE: ") + 
-                     GetBindName(action.gameBind)).c_str());
+
+        APIDefs->Log(LOGL_DEBUG, "MacroManager",
+            ("Key " + std::string(action.isKeyDown ? "PRESS: " : "RELEASE: ") +
+             GetBindName(action.gameBind)).c_str());
     }
 }
 
-// Delete a macro by index (moved from main.cpp)
+// Delete macro (reset slot)
 void DeleteMacro(size_t index)
 {
-    if (index < g_keybinds.size())
-    {
-        // Unregister the keybind first
-        UnregisterKeybind(g_keybinds[index].identifier);
-        
-        // Remove from vector
-        g_keybinds.erase(g_keybinds.begin() + index);
-        
-        APIDefs->Log(LOGL_INFO, "MacroManager", "Macro deleted");
-    }
+    if (index >= g_macros.size()) return;
+
+    g_macros[index].actions.clear();
+    g_macros[index].enabled = false;
+    g_macros[index].name = "Empty";
+    g_macros[index].identifier = "MACRO_" + std::to_string(index + 1);
+    UnregisterKeybind(g_macros[index].identifier);
+
+    APIDefs->Log(LOGL_INFO, "MacroManager", ("Macro slot " + std::to_string(index + 1) + " cleared").c_str());
 }
 
-// Delete a key action from sequence (moved from main.cpp)
-void DeleteKeyAction(size_t index)
+// Save or update macro
+void SaveMacro(const std::string& name, int slot, const std::vector<KeyAction>& actions)
 {
-    if (index < g_keyActions.size())
+    if (name.empty() || actions.empty() || slot < 0 || slot >= 10)
     {
-        g_keyActions.erase(g_keyActions.begin() + index);
-        APIDefs->Log(LOGL_INFO, "MacroManager", "Key action deleted");
+        APIDefs->Log(LOGL_WARNING, "MacroManager", "Cannot save macro: invalid name, actions, or slot");
+        return;
     }
+
+    std::string identifier = "MACRO_" + std::to_string(slot + 1);
+
+    g_macros[slot].name = name;
+    g_macros[slot].identifier = identifier;
+    g_macros[slot].actions = actions;
+    g_macros[slot].enabled = true;
+
+    RegisterKeybind(g_macros[slot]);
+
+    APIDefs->Log(LOGL_INFO, "MacroManager", ("Saved macro in slot " + std::to_string(slot + 1)).c_str());
+
+    g_showMacroEditor = false;
+    g_selectedMacroIndex = -1;
 }
 
-// Save macro function (extracted from GUI code)
-bool SaveMacro(const std::string& name, const std::string& keyCombo)
+// Register/Unregister keybinds
+void RegisterKeybind(const Macro& macro)
 {
-    if (g_keyActions.empty() || name.empty())
-    {
-        return false;
-    }
-    
-    std::string identifier = "KB_MACRO_" + std::to_string(g_keybinds.size() + 1);
-    CustomKeybind newKeybind(name, identifier, keyCombo);
-    
-    g_keybinds.push_back(newKeybind);
-    RegisterKeybind(newKeybind);
-    
-    APIDefs->Log(LOGL_INFO, "MacroManager", 
-                ("Saved macro: " + newKeybind.name).c_str());
-    
-    return true;
-}
-
-// Clear key sequence function
-void ClearKeySequence()
-{
-    g_keyActions.clear();
-}
-
-// Keybind management functions
-void RegisterKeybind(const CustomKeybind& keybind)
-{
-    if (APIDefs)
-    {
-        APIDefs->InputBinds_RegisterWithString(keybind.identifier.c_str(), ProcessKeybind, keybind.keyCombo.c_str());
-    }
+    if (!APIDefs) return;
+    APIDefs->InputBinds_RegisterWithString(macro.identifier.c_str(), ProcessKeybind, "");
 }
 
 void UnregisterKeybind(const std::string& identifier)
 {
     if (APIDefs)
-    {
         APIDefs->InputBinds_Deregister(identifier.c_str());
-    }
+}
+
+// Open Macro Editor
+void OpenMacroEditor(int index)
+{
+    g_selectedMacroIndex = index;
+    g_showMacroEditor = true;
 }
