@@ -24,15 +24,12 @@ A C++ toolkit for managing **Guild Wars 2 macros** via the **Nexus Loader**. Thi
 ## 📁 Project Structure
 ```
 src/
-├── core/
-│ ├── MacroManager.cpp
-│ ├── MacroManager.h
-│ └── NexusIntegration.cpp
-├── gui/
-│ ├── ImGuiRenderer.cpp
-│ └── ImGuiRenderer.h
-├── utils/
-│ └── FileUtils.cpp
+├── src/
+│ ├── shared.cpp
+│ └── main.cpp
+├── include/
+│ ├── Nexus.h
+│ └── shared.h
 CMakeLists.txt
 build.sh
 ```
