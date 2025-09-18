@@ -43,7 +43,10 @@ void AddonLoad(AddonAPI_t *aApi)
     APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Keybind Manager v0.1.2 loaded!");
 
     if (APIDefs->ImguiContext)
+    {
         ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
+        ImGui::SetAllocatorFunctions((void *(*)(size_t, void *))APIDefs->ImguiMalloc, (void (*)(void *, void *))APIDefs->ImguiFree);
+    }
 
     LoadMacrosFromJson();
 
@@ -119,6 +122,7 @@ void SetupKeybinds()
 
 void AddonRender()
 {
+    ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
     RenderMainWindow();
     RenderMacroEditor();
 }
@@ -324,6 +328,7 @@ void RenderMacroEditor()
 
 void AddonOptions()
 {
+    ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
     ImGui::Text("Macro Keybind Manager v0.1.2");
     ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Execute sequences of game actions with precise timing control");
     ImGui::Separator();
