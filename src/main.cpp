@@ -135,6 +135,23 @@ void RenderMainWindow()
     ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Macro Manager", &g_showMainWindow))
     {
+        ImVec4 statusColor;
+        const char *statusText;
+
+        if (IsInCompetitiveMode())
+        {
+            statusColor = ImVec4(1.0f, 0.2f, 0.2f, 1.0f); // Red
+            statusText = "COMPETITIVE MODE (PVP/WVW) - MACROS DISABLED";
+        }
+        else
+        {
+            statusColor = ImVec4(0.2f, 0.8f, 0.2f, 1.0f); // Green
+            statusText = "PVE MODE - MACROS ENABLED";
+        }
+
+        ImGui::TextColored(statusColor, "%s", statusText);
+        ImGui::Separator();
+
         ImGui::Text("Macro Slots (10 total)");
         ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Assign keybinds through Nexus settings");
         ImGui::Separator();
@@ -362,6 +379,42 @@ void AddonOptions()
 
     ImGui::Text("Active Macros: %d / 10", activeMacros);
     ImGui::Text("Total Actions: %d", totalActions);
+
+    ImGui::Separator();
+
+    ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.4f, 1.0f), "Macro Usage Policy Disclaimer:");
+    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "Please read and understand the following policy before using macros:");
+
+    if (ImGui::CollapsingHeader("Macro Usage Policy", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::TextWrapped("In general, our policy is as follows:");
+        ImGui::TextWrapped("Attended macro use is permitted as long as it is not exploitative, and as long as it does not provide the user with an unfair advantage over other players. Unattended macro use is prohibited under any circumstances.");
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), "Allowed Macros:");
+        ImGui::BulletText("You may bind dodge and jump to a single key.");
+        ImGui::BulletText("You may create an auto-clicker that opens or consumes a stack of items.");
+        ImGui::BulletText("You may use music macros to compose or perform in-game music (actively attended).");
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.6f, 1.0f), "Prohibited Macros:");
+        ImGui::BulletText("Macro use cannot interfere with the gameplay of other players.");
+        ImGui::BulletText("You cannot program a macro to perform actions on more than one account at a time.");
+        ImGui::BulletText("You cannot use macros to automate skill use while away from your computer.");
+        ImGui::BulletText("You cannot use macros to create skill chains in any competitive environment.");
+        ImGui::BulletText("You cannot use macros to participate in activities or events (e.g., Bell Choir).");
+        ImGui::BulletText("You cannot use macros for AFK farming of items, currencies, karma, or other benefits.");
+        ImGui::BulletText("You cannot use macros to fully automate a character (botting).");
+        ImGui::BulletText("Each macro should represent a single action that requires user input.");
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "Important:");
+        ImGui::TextWrapped("This addon automatically disables macros in competitive modes (PvP/WvW) to comply with game policies. However, you are ultimately responsible for using macros in accordance with the game's terms of service.");
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.2f, 1.0f), "Warning:");
+        ImGui::TextWrapped("Violation of these policies may result in account restrictions. Use macros responsibly!");
+    }
 
     ImGui::Separator();
 
