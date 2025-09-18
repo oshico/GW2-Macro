@@ -1,8 +1,13 @@
 /**
  * @file Shared.cpp
- * @brief Implementation of shared functionality for Macro Keybind Manager
+ * @brief Implementation of shared functionality for Macro Keybind Manager.
+ *
+ * Provides utilities for macro management, keybind registration, execution,
+ * and JSON-based persistence. Includes helper functions for working with
+ * game binds and basic JSON parsing/escaping.
+ *
  * @author oshico
- * @version 0.1.1
+ * @version 0.1.2
  */
 
 #include "Shared.h"
@@ -18,10 +23,11 @@
 // GLOBAL VARIABLES
 // =============================================================================
 
+/** @brief Pointer to the Addon API definitions, set during initialization. */
 AddonAPI_t *APIDefs = nullptr;
 
 /**
- * @brief Pre-initialized macro slots (MACRO_1 through MACRO_10)
+ * @brief Pre-initialized macro slots (MACRO_1 through MACRO_10).
  *
  * All slots start as "Empty" and disabled. Users can assign macros to any slot
  * through the editor interface.
@@ -32,14 +38,25 @@ std::vector<Macro> g_macros = {
     Macro("Empty", "MACRO_7"), Macro("Empty", "MACRO_8"), Macro("Empty", "MACRO_9"),
     Macro("Empty", "MACRO_10")};
 
+/** @brief Whether the main manager window should be displayed. */
 bool g_showMainWindow = false;
+
+/** @brief Whether the macro editor window should be displayed. */
 bool g_showMacroEditor = false;
+
+/** @brief Index of the currently selected macro for editing, or -1 if none. */
 int g_selectedMacroIndex = -1;
 
 // =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
 
+/**
+ * @brief Get the human-readable name of a game bind.
+ *
+ * @param bind Game bind enum value.
+ * @return const char* Name of the bind (e.g. "Weapon 1", "Dodge").
+ */
 const char *GetBindName(EGameBinds bind)
 {
     switch (bind)
@@ -77,6 +94,12 @@ const char *GetBindName(EGameBinds bind)
     }
 }
 
+/**
+ * @brief Convert a game bind enum to its string identifier.
+ *
+ * @param bind Game bind enum value.
+ * @return std::string Identifier string (e.g. "GB_SkillWeapon1").
+ */
 std::string GameBindToString(EGameBinds bind)
 {
     switch (bind)
@@ -128,10 +151,16 @@ std::string GameBindToString(EGameBinds bind)
     case GB_SkillProfession5:
         return "GB_SkillProfession5";
     default:
-        return "GB_SkillWeapon1"; // Default fallback
+        return "GB_SkillWeapon1";
     }
 }
 
+/**
+ * @brief Convert a string identifier into its corresponding game bind enum.
+ *
+ * @param bindStr Identifier string (e.g. "GB_SkillWeapon1").
+ * @return EGameBinds Enum value for the bind, defaults to GB_SkillWeapon1 if invalid.
+ */
 EGameBinds StringToGameBind(const std::string &bindStr)
 {
     if (bindStr == "GB_SkillWeapon1")
@@ -181,7 +210,6 @@ EGameBinds StringToGameBind(const std::string &bindStr)
     if (bindStr == "GB_SkillProfession5")
         return GB_SkillProfession5;
 
-    // Default fallback
     return GB_SkillWeapon1;
 }
 
@@ -189,32 +217,38 @@ EGameBinds StringToGameBind(const std::string &bindStr)
 // MACRO EXECUTION
 // =============================================================================
 
+/**
+ * @brief Execute a macro by performing its configured key actions in order.
+ *
+ * Applies any configured delays between actions and logs execution for debugging.
+ * Skips execution if the macro is disabled.
+ *
+ * @param macro The macro to execute.
+ */
 void ExecuteMacro(const Macro &macro)
 {
-    // Skip execution if macro is disabled
     if (!macro.enabled)
         return;
 
     APIDefs->Log(LOGL_INFO, "MacroManager", ("Executing macro: " + macro.name).c_str());
 
-    // Execute each action in sequence
     for (const auto &action : macro.actions)
     {
-        // Apply delay before action if specified
         if (action.delayMs > 0)
             std::this_thread::sleep_for(std::chrono::milliseconds(action.delayMs));
 
-        // Execute the key press or release
         if (action.isKeyDown)
             APIDefs->GameBinds_PressAsync(action.gameBind);
         else
             APIDefs->GameBinds_ReleaseAsync(action.gameBind);
 
-        // Log the action for debugging
-        APIDefs->Log(LOGL_DEBUG, "MacroManager",
-                     ("Action executed: " + std::string(action.isKeyDown ? "PRESS " : "RELEASE ") +
-                      GetBindName(action.gameBind))
-                         .c_str());
+        APIDefs->Log(
+            LOGL_DEBUG,
+            "MacroManager",
+            ("Action executed: " +
+             std::string(action.isKeyDown ? "PRESS " : "RELEASE ") +
+             GetBindName(action.gameBind))
+                .c_str());
     }
 }
 
@@ -222,27 +256,45 @@ void ExecuteMacro(const Macro &macro)
 // MACRO MANAGEMENT
 // =============================================================================
 
+/**
+ * @brief Delete (reset) a macro at a specific slot index.
+ *
+ * Unregisters the keybind, clears its actions, disables it, and resets the slot
+ * back to the "Empty" state.
+ *
+ * @param index Index of the macro slot to delete.
+ */
 void DeleteMacro(size_t index)
 {
     if (index >= g_macros.size())
         return;
 
-    // Unregister the keybind before clearing
     UnregisterKeybind(g_macros[index].identifier);
 
-    // Reset macro to empty state
     g_macros[index].actions.clear();
     g_macros[index].enabled = false;
     g_macros[index].name = "Empty";
     g_macros[index].identifier = "MACRO_" + std::to_string(index + 1);
 
-    APIDefs->Log(LOGL_INFO, "MacroManager",
-                 ("Macro slot " + std::to_string(index + 1) + " cleared").c_str());
+    APIDefs->Log(
+        LOGL_INFO,
+        "MacroManager",
+        ("Macro slot " + std::to_string(index + 1) + " cleared").c_str());
 }
 
+/**
+ * @brief Save a macro to a specified slot.
+ *
+ * Validates the macro name and actions, unregisters any previous keybind,
+ * updates the slot with new data, registers the new keybind, and closes
+ * the editor after saving.
+ *
+ * @param name     Name of the macro.
+ * @param slot     Slot index (0–9).
+ * @param actions  List of actions to assign to the macro.
+ */
 void SaveMacro(const std::string &name, int slot, const std::vector<KeyAction> &actions)
 {
-    // Validate input parameters
     if (name.empty())
     {
         APIDefs->Log(LOGL_WARNING, "MacroManager", "Cannot save macro: name is empty");
@@ -261,25 +313,22 @@ void SaveMacro(const std::string &name, int slot, const std::vector<KeyAction> &
         return;
     }
 
-    // Generate identifier for the slot
     std::string identifier = "MACRO_" + std::to_string(slot + 1);
 
-    // Unregister old keybind if one exists
     UnregisterKeybind(g_macros[slot].identifier);
 
-    // Update macro data
     g_macros[slot].name = name;
     g_macros[slot].identifier = identifier;
     g_macros[slot].actions = actions;
     g_macros[slot].enabled = true;
 
-    // Register new keybind
     RegisterKeybind(g_macros[slot]);
 
-    APIDefs->Log(LOGL_INFO, "MacroManager",
-                 ("Macro '" + name + "' saved to slot " + std::to_string(slot + 1)).c_str());
+    APIDefs->Log(
+        LOGL_INFO,
+        "MacroManager",
+        ("Macro '" + name + "' saved to slot " + std::to_string(slot + 1)).c_str());
 
-    // Close editor after successful save
     g_showMacroEditor = false;
     g_selectedMacroIndex = -1;
 }
@@ -288,25 +337,43 @@ void SaveMacro(const std::string &name, int slot, const std::vector<KeyAction> &
 // KEYBIND MANAGEMENT
 // =============================================================================
 
+/**
+ * @brief Register a keybind for a given macro.
+ *
+ * Registers the keybind with Nexus using the macro’s identifier. The bind is
+ * registered with an empty string so the user can configure it later in Nexus.
+ *
+ * @param macro Macro for which to register the keybind.
+ */
 void RegisterKeybind(const Macro &macro)
 {
     if (!APIDefs)
         return;
 
-    // Register keybind with empty string (user will set through Nexus)
     APIDefs->InputBinds_RegisterWithString(macro.identifier.c_str(), ProcessKeybind, "");
 
-    APIDefs->Log(LOGL_DEBUG, "MacroManager",
-                 ("Keybind registered for: " + macro.identifier).c_str());
+    APIDefs->Log(
+        LOGL_DEBUG,
+        "MacroManager",
+        ("Keybind registered for: " + macro.identifier).c_str());
 }
 
+/**
+ * @brief Unregister a keybind by its identifier.
+ *
+ * Deregisters the keybind from Nexus and logs the result.
+ *
+ * @param identifier Identifier of the keybind to unregister.
+ */
 void UnregisterKeybind(const std::string &identifier)
 {
     if (APIDefs)
     {
         APIDefs->InputBinds_Deregister(identifier.c_str());
-        APIDefs->Log(LOGL_DEBUG, "MacroManager",
-                     ("Keybind unregistered: " + identifier).c_str());
+        APIDefs->Log(
+            LOGL_DEBUG,
+            "MacroManager",
+            ("Keybind unregistered: " + identifier).c_str());
     }
 }
 
@@ -314,6 +381,14 @@ void UnregisterKeybind(const std::string &identifier)
 // GUI CONTROL
 // =============================================================================
 
+/**
+ * @brief Open the macro editor for a given macro slot.
+ *
+ * Sets the global editor state to display the macro editor window, either for
+ * an existing macro slot (0–9) or for a new macro (-1).
+ *
+ * @param index Index of the macro to edit, or -1 to create a new macro.
+ */
 void OpenMacroEditor(int index)
 {
     g_selectedMacroIndex = index;
@@ -321,8 +396,10 @@ void OpenMacroEditor(int index)
 
     if (index >= 0 && index < static_cast<int>(g_macros.size()))
     {
-        APIDefs->Log(LOGL_DEBUG, "MacroManager",
-                     ("Opening editor for macro: " + g_macros[index].name).c_str());
+        APIDefs->Log(
+            LOGL_DEBUG,
+            "MacroManager",
+            ("Opening editor for macro: " + g_macros[index].name).c_str());
     }
     else
     {
@@ -334,6 +411,15 @@ void OpenMacroEditor(int index)
 // HELPER FUNCTIONS FOR MANUAL JSON HANDLING
 // =============================================================================
 
+/**
+ * @brief Escape special characters in a string for JSON output.
+ *
+ * Replaces quotes, backslashes, and control characters with their JSON escape
+ * sequences.
+ *
+ * @param str Input string to escape.
+ * @return std::string Escaped JSON-compatible string.
+ */
 std::string EscapeJsonString(const std::string &str)
 {
     std::string escaped;
@@ -365,8 +451,7 @@ std::string EscapeJsonString(const std::string &str)
         default:
             if (c < 0x20)
             {
-                escaped += "\\u";
-                escaped += "0000"; // Simple handling for control chars
+                escaped += "\\u0000";
             }
             else
             {
@@ -378,6 +463,15 @@ std::string EscapeJsonString(const std::string &str)
     return escaped;
 }
 
+/**
+ * @brief Unescape JSON-encoded string back into normal text.
+ *
+ * Converts escaped sequences like `\n`, `\t`, `\\`, and `\"` into their actual
+ * character representations.
+ *
+ * @param str JSON-escaped string.
+ * @return std::string Unescaped string.
+ */
 std::string UnescapeJsonString(const std::string &str)
 {
     std::string unescaped;
@@ -432,6 +526,14 @@ std::string UnescapeJsonString(const std::string &str)
 // CONFIGURATION FILE PATH
 // =============================================================================
 
+/**
+ * @brief Get the full path to the macros configuration file.
+ *
+ * Uses the Nexus API to retrieve the addon directory for "Macro" and appends
+ * `macros.json`.
+ *
+ * @return std::string Full file path to the configuration file.
+ */
 std::string GetConfigFilePath()
 {
     if (!APIDefs)
@@ -445,6 +547,14 @@ std::string GetConfigFilePath()
 // JSON SAVE FUNCTIONALITY
 // =============================================================================
 
+/**
+ * @brief Save all macros to the JSON configuration file.
+ *
+ * Builds JSON manually with macro names, identifiers, enabled state, and actions,
+ * then writes it to the file at `GetConfigFilePath()`. Creates directories if needed.
+ *
+ * @return true if save was successful, false otherwise.
+ */
 bool SaveMacrosToJson()
 {
     try
@@ -456,11 +566,9 @@ bool SaveMacrosToJson()
             return false;
         }
 
-        // Create directory if it doesn't exist
         std::filesystem::path filePath(configPath);
         std::filesystem::create_directories(filePath.parent_path());
 
-        // Build JSON manually
         std::stringstream json;
         json << "{\n";
         json << "  \"version\": \"0.1.2\",\n";
@@ -502,7 +610,6 @@ bool SaveMacrosToJson()
         json << "  ]\n";
         json << "}\n";
 
-        // Write to file
         std::ofstream file(configPath);
         if (!file.is_open())
         {
@@ -519,7 +626,8 @@ bool SaveMacrosToJson()
     catch (const std::exception &e)
     {
         if (APIDefs)
-            APIDefs->Log(LOGL_WARNING, "MacroManager", ("Failed to save macros: " + std::string(e.what())).c_str());
+            APIDefs->Log(LOGL_WARNING, "MacroManager",
+                         ("Failed to save macros: " + std::string(e.what())).c_str());
         return false;
     }
 }
@@ -528,6 +636,14 @@ bool SaveMacrosToJson()
 // SIMPLE JSON PARSING FUNCTIONS
 // =============================================================================
 
+/**
+ * @brief Extract a JSON string value by key starting from a position.
+ *
+ * @param json JSON string to parse.
+ * @param key Key name to extract.
+ * @param pos Reference to current parse position; updated after extraction.
+ * @return std::string Extracted and unescaped string value.
+ */
 std::string ExtractJsonString(const std::string &json, const std::string &key, size_t &pos)
 {
     std::string searchKey = "\"" + key + "\":";
@@ -539,7 +655,7 @@ std::string ExtractJsonString(const std::string &json, const std::string &key, s
     if (valueStart == std::string::npos)
         return "";
 
-    valueStart++; // Skip opening quote
+    valueStart++;
     size_t valueEnd = json.find("\"", valueStart);
     if (valueEnd == std::string::npos)
         return "";
@@ -548,6 +664,14 @@ std::string ExtractJsonString(const std::string &json, const std::string &key, s
     return UnescapeJsonString(json.substr(valueStart, valueEnd - valueStart));
 }
 
+/**
+ * @brief Extract a boolean value from JSON by key starting from a position.
+ *
+ * @param json JSON string to parse.
+ * @param key Key name to extract.
+ * @param pos Reference to current parse position; updated after extraction.
+ * @return true if value is true, false if false or key not found.
+ */
 bool ExtractJsonBool(const std::string &json, const std::string &key, size_t &pos)
 {
     std::string searchKey = "\"" + key + "\":";
@@ -572,6 +696,14 @@ bool ExtractJsonBool(const std::string &json, const std::string &key, size_t &po
     return false;
 }
 
+/**
+ * @brief Extract an integer value from JSON by key starting from a position.
+ *
+ * @param json JSON string to parse.
+ * @param key Key name to extract.
+ * @param pos Reference to current parse position; updated after extraction.
+ * @return int Parsed integer value, or 0 if not found.
+ */
 int ExtractJsonInt(const std::string &json, const std::string &key, size_t &pos)
 {
     std::string searchKey = "\"" + key + "\":";
@@ -582,13 +714,11 @@ int ExtractJsonInt(const std::string &json, const std::string &key, size_t &pos)
     size_t valueStart = keyPos + searchKey.length();
     size_t valueEnd = valueStart;
 
-    // Skip whitespace
     while (valueEnd < json.length() && (json[valueEnd] == ' ' || json[valueEnd] == '\t' || json[valueEnd] == '\n'))
         valueEnd++;
 
     valueStart = valueEnd;
 
-    // Find end of number
     while (valueEnd < json.length() && (isdigit(json[valueEnd]) || json[valueEnd] == '-'))
         valueEnd++;
 
@@ -605,6 +735,15 @@ int ExtractJsonInt(const std::string &json, const std::string &key, size_t &pos)
 // JSON LOAD FUNCTIONALITY
 // =============================================================================
 
+/**
+ * @brief Load macros from the JSON configuration file.
+ *
+ * Parses the JSON manually and updates `g_macros` with names, identifiers,
+ * enabled states, and action sequences. Uses default values if file is missing
+ * or malformed.
+ *
+ * @return true if load was successful, false otherwise.
+ */
 bool LoadMacrosFromJson()
 {
     try
@@ -629,7 +768,6 @@ bool LoadMacrosFromJson()
 
         std::string json = buffer.str();
 
-        // Parse macros array
         size_t macrosStart = json.find("\"macros\":");
         if (macrosStart == std::string::npos)
         {
@@ -637,7 +775,6 @@ bool LoadMacrosFromJson()
             return false;
         }
 
-        // Find array start
         size_t arrayStart = json.find("[", macrosStart);
         size_t arrayEnd = json.find("]", arrayStart);
         if (arrayStart == std::string::npos || arrayEnd == std::string::npos)
@@ -646,13 +783,11 @@ bool LoadMacrosFromJson()
             return false;
         }
 
-        // Parse each macro object
         size_t pos = arrayStart + 1;
         int macroIndex = 0;
 
         while (pos < arrayEnd && macroIndex < static_cast<int>(g_macros.size()))
         {
-            // Find next macro object
             size_t objStart = json.find("{", pos);
             if (objStart == std::string::npos || objStart > arrayEnd)
                 break;
@@ -660,7 +795,6 @@ bool LoadMacrosFromJson()
             size_t objEnd = objStart + 1;
             int braceCount = 1;
 
-            // Find matching closing brace
             while (objEnd < json.length() && braceCount > 0)
             {
                 if (json[objEnd] == '{')
@@ -673,15 +807,13 @@ bool LoadMacrosFromJson()
             if (braceCount > 0)
                 break;
 
-            // Extract macro data
             size_t macroPos = objStart;
             std::string name = ExtractJsonString(json, "name", macroPos);
             std::string identifier = ExtractJsonString(json, "identifier", macroPos);
 
-            macroPos = objStart; // Reset position
+            macroPos = objStart;
             bool enabled = ExtractJsonBool(json, "enabled", macroPos);
 
-            // Update macro
             if (!name.empty() && !identifier.empty() && macroIndex < static_cast<int>(g_macros.size()))
             {
                 g_macros[macroIndex].name = name;
@@ -689,7 +821,6 @@ bool LoadMacrosFromJson()
                 g_macros[macroIndex].enabled = enabled;
                 g_macros[macroIndex].actions.clear();
 
-                // Parse actions array
                 size_t actionsStart = json.find("\"actions\":", objStart);
                 if (actionsStart != std::string::npos && actionsStart < objEnd)
                 {
@@ -718,7 +849,6 @@ bool LoadMacrosFromJson()
                                 actionObjEnd++;
                             }
 
-                            // Extract action data
                             size_t actionDataPos = actionObjStart;
                             std::string gameBindStr = ExtractJsonString(json, "gameBind", actionDataPos);
 
@@ -728,7 +858,6 @@ bool LoadMacrosFromJson()
                             actionDataPos = actionObjStart;
                             int delayMs = ExtractJsonInt(json, "delayMs", actionDataPos);
 
-                            // Add action if valid
                             if (!gameBindStr.empty())
                             {
                                 EGameBinds gameBind = StringToGameBind(gameBindStr);
@@ -746,12 +875,3 @@ bool LoadMacrosFromJson()
         }
 
         APIDefs->Log(LOGL_INFO, "MacroManager", "Macros loaded successfully");
-        return true;
-    }
-    catch (const std::exception &e)
-    {
-        if (APIDefs)
-            APIDefs->Log(LOGL_WARNING, "MacroManager", ("Failed to load macros: " + std::string(e.what())).c_str());
-        return false;
-    }
-}

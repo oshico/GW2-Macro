@@ -5,22 +5,23 @@
 #include <vector>
 #include <string>
 
-/**
- * @file Shared.h
- * @brief Shared declarations and structures for the Macro Keybind Manager addon
- * @author oshico
- * @version 0.1.1
- */
+// =============================================================================
+// GLOBAL API POINTER
+// =============================================================================
 
-// Global API pointer for Nexus addon framework
+/// Global API pointer for Nexus addon framework
 extern AddonAPI_t *APIDefs;
+
+// =============================================================================
+// DATA STRUCTURES
+// =============================================================================
 
 /**
  * @struct KeyAction
  * @brief Represents a single key action within a macro sequence
  *
- * Each KeyAction defines a game bind to press or release, with an optional delay
- * before execution. This allows for complex timing-based macro sequences.
+ * Each KeyAction defines a game bind to press or release, with an optional
+ * delay before execution. This allows for complex timing-based macro sequences.
  */
 struct KeyAction
 {
@@ -29,9 +30,9 @@ struct KeyAction
     int delayMs;         ///< Delay in milliseconds before executing this action
 
     /**
-     * @brief Constructs a KeyAction with the specified parameters
+     * @brief Construct a KeyAction with the specified parameters
      * @param bind The game bind to trigger
-     * @param down Whether this is a press (true) or release (false) action
+     * @param down True for a press action, false for a release action
      * @param delay Optional delay in milliseconds before execution (default: 0)
      */
     KeyAction(EGameBinds bind, bool down, int delay = 0)
@@ -54,7 +55,7 @@ struct Macro
     std::vector<KeyAction> actions; ///< Sequence of actions to execute
 
     /**
-     * @brief Constructs a Macro with the specified name and identifier
+     * @brief Construct a Macro with the specified name and identifier
      * @param n Display name for the macro
      * @param id Unique identifier for keybind system
      */
@@ -76,7 +77,7 @@ extern int g_selectedMacroIndex;    ///< Index of currently selected macro for e
 // =============================================================================
 
 /**
- * @brief Initializes the addon when loaded by Nexus
+ * @brief Initialize the addon when loaded by Nexus
  * @param aApi Pointer to the Nexus API structure
  *
  * Sets up GUI callbacks, registers keybinds, and initializes macro system.
@@ -84,7 +85,7 @@ extern int g_selectedMacroIndex;    ///< Index of currently selected macro for e
 void AddonLoad(AddonAPI_t *aApi);
 
 /**
- * @brief Cleans up resources when addon is unloaded
+ * @brief Clean up resources when the addon is unloaded
  *
  * Unregisters all keybinds and GUI callbacks before shutdown.
  */
@@ -95,7 +96,7 @@ void AddonUnload();
 // =============================================================================
 
 /**
- * @brief Main render callback for addon GUI elements
+ * @brief Render all addon GUI elements
  *
  * Called every frame by Nexus. Renders both main window and macro editor
  * if they are visible.
@@ -103,31 +104,31 @@ void AddonUnload();
 void AddonRender();
 
 /**
- * @brief Renders the addon's options panel in Nexus settings
+ * @brief Render the addon's options panel in Nexus settings
  *
  * Displays addon information, statistics, and quick access buttons.
  */
 void AddonOptions();
 
 /**
- * @brief Renders the main macro manager window
+ * @brief Render the main macro manager window
  *
  * Shows the table of all 10 macro slots with their status, action counts,
- * and controls for editing/deleting macros.
+ * and controls for editing or deleting macros.
  */
 void RenderMainWindow();
 
 /**
- * @brief Renders the macro editor window
+ * @brief Render the macro editor window
  *
- * Provides interface for creating and editing macro sequences, including
+ * Provides an interface for creating and editing macro sequences, including
  * action list management and slot selection.
  */
 void RenderMacroEditor();
 
 /**
- * @brief Opens the macro editor for a specific slot
- * @param index Index of macro to edit (-1 for new macro)
+ * @brief Open the macro editor for a specific slot
+ * @param index Index of macro to edit (-1 for a new macro)
  */
 void OpenMacroEditor(int index = -1);
 
@@ -136,7 +137,7 @@ void OpenMacroEditor(int index = -1);
 // =============================================================================
 
 /**
- * @brief Handles keybind press events from Nexus
+ * @brief Handle keybind press events from Nexus
  * @param aIdentifier String identifier of the pressed keybind
  * @param aIsRelease True if this is a key release event (ignored)
  *
@@ -145,20 +146,20 @@ void OpenMacroEditor(int index = -1);
 void ProcessKeybind(const char *aIdentifier, bool aIsRelease);
 
 /**
- * @brief Sets up all keybind registrations
+ * @brief Set up all keybind registrations
  *
  * Registers the main window toggle keybind and all macro slot keybinds.
  */
 void SetupKeybinds();
 
 /**
- * @brief Registers a keybind for the specified macro
+ * @brief Register a keybind for the specified macro
  * @param macro The macro to register a keybind for
  */
 void RegisterKeybind(const Macro &macro);
 
 /**
- * @brief Unregisters a keybind by its identifier
+ * @brief Unregister a keybind by its identifier
  * @param identifier The keybind identifier to unregister
  */
 void UnregisterKeybind(const std::string &identifier);
@@ -168,16 +169,16 @@ void UnregisterKeybind(const std::string &identifier);
 // =============================================================================
 
 /**
- * @brief Executes a macro's action sequence
+ * @brief Execute a macro's action sequence
  * @param macro The macro to execute
  *
  * Processes each KeyAction in the macro's sequence, respecting delays and
- * press/release states. Only executes if macro is enabled.
+ * press/release states. Only executes if the macro is enabled.
  */
 void ExecuteMacro(const Macro &macro);
 
 /**
- * @brief Deletes/resets a macro slot to empty state
+ * @brief Delete or reset a macro slot to an empty state
  * @param index Index of the macro slot to delete
  *
  * Clears all actions, disables the macro, resets name to "Empty",
@@ -186,9 +187,9 @@ void ExecuteMacro(const Macro &macro);
 void DeleteMacro(size_t index);
 
 /**
- * @brief Saves a macro to the specified slot
+ * @brief Save a macro to the specified slot
  * @param name Display name for the macro
- * @param slot Slot number (0-9) to save the macro to
+ * @param slot Slot number (0–9) to save the macro to
  * @param actions Vector of KeyActions that make up the macro sequence
  *
  * Creates or updates a macro in the specified slot and registers its keybind.
@@ -200,19 +201,19 @@ void SaveMacro(const std::string &name, int slot, const std::vector<KeyAction> &
 // =============================================================================
 
 /**
- * @brief Saves all macros to JSON configuration file
+ * @brief Save all macros to a JSON configuration file
  * @return True if save was successful, false otherwise
  */
 bool SaveMacrosToJson();
 
 /**
- * @brief Loads macros from JSON configuration file
+ * @brief Load macros from a JSON configuration file
  * @return True if load was successful, false otherwise
  */
 bool LoadMacrosFromJson();
 
 /**
- * @brief Gets the path to the configuration file
+ * @brief Get the path to the configuration file
  * @return Full path to the macro configuration JSON file
  */
 std::string GetConfigFilePath();
@@ -222,32 +223,10 @@ std::string GetConfigFilePath();
 // =============================================================================
 
 /**
- * @brief Converts a game bind enum to human-readable string
+ * @brief Convert a game bind enum to a human-readable string
  * @param bind The EGameBinds enum value to convert
  * @return Human-readable name of the game bind
  */
 const char *GetBindName(EGameBinds bind);
-
-// =============================================================================
-// JSON PERSISTENCE FUNCTIONS
-// =============================================================================
-
-/**
- * @brief Saves all macros to JSON configuration file
- * @return True if save was successful, false otherwise
- */
-bool SaveMacrosToJson();
-
-/**
- * @brief Loads macros from JSON configuration file
- * @return True if load was successful, false otherwise
- */
-bool LoadMacrosFromJson();
-
-/**
- * @brief Gets the path to the configuration file
- * @return Full path to the macro configuration JSON file
- */
-std::string GetConfigFilePath();
 
 #endif // SHARED_H
