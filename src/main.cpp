@@ -15,7 +15,7 @@ AddonDefinition_t AddonDef{};
  */
 extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef()
 {
-    AddonDef.Signature = -12345;
+    AddonDef.Signature = 0xA1B2C3D4;
     AddonDef.APIVersion = NEXUS_API_VERSION;
     AddonDef.Name = "Macro Manager";
     AddonDef.Version.Major = 0;
