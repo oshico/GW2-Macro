@@ -875,3 +875,13 @@ bool LoadMacrosFromJson()
         }
 
         APIDefs->Log(LOGL_INFO, "MacroManager", "Macros loaded successfully");
+        return true;
+    }
+    catch (const std::exception &e)
+    {
+        if (APIDefs)
+            APIDefs->Log(LOGL_WARNING, "MacroManager",
+                         ("Failed to load macros: " + std::string(e.what())).c_str());
+        return false;
+    }
+}
