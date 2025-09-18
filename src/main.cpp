@@ -3,7 +3,7 @@
  * @brief Main entry point and GUI implementation for Macro Keybind Manager
  * @author oshico
  * @version 0.1.1
- * 
+ *
  * This addon provides a macro system for Guild Wars 2 that allows players to create
  * and execute sequences of game actions with timing control. Designed primarily for
  * speedrunning and efficient gameplay automation.
@@ -57,6 +57,8 @@ void AddonLoad(AddonAPI_t *aApi)
     if (APIDefs->ImguiContext)
         ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
 
+    LoadMacrosFromJson();
+
     // Clean up any existing keybinds from previous sessions
     for (const auto &macro : g_macros)
         UnregisterKeybind(macro.identifier);
@@ -68,7 +70,7 @@ void AddonLoad(AddonAPI_t *aApi)
     // Register GUI callbacks
     APIDefs->GUI_Register(RT_Render, AddonRender);
     APIDefs->GUI_Register(RT_OptionsRender, AddonOptions);
-    
+
     // Set up keybind system
     SetupKeybinds();
 }
@@ -77,6 +79,8 @@ void AddonUnload()
 {
     if (APIDefs)
     {
+        SaveMacrosToJson();
+
         // Unregister all macro keybinds
         for (const auto &macro : g_macros)
             UnregisterKeybind(macro.identifier);
@@ -84,10 +88,10 @@ void AddonUnload()
         // Unregister GUI callbacks
         APIDefs->GUI_Deregister(AddonRender);
         APIDefs->GUI_Deregister(AddonOptions);
-        
+
         // Unregister main window toggle keybind
         APIDefs->InputBinds_Deregister("MACRO_SHOW_WINDOW");
-        
+
         APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Manager unloaded!");
     }
 }
@@ -129,7 +133,7 @@ void SetupKeybinds()
     APIDefs->InputBinds_RegisterWithString("MACRO_SHOW_WINDOW", ProcessKeybind, "CTRL+SHIFT+K");
 
     // Register keybinds for all macro slots (users will assign keys through Nexus)
-    for (const auto& macro : g_macros)
+    for (const auto &macro : g_macros)
         RegisterKeybind(macro);
 }
 
@@ -176,7 +180,10 @@ void RenderMainWindow()
                 ImGui::TableSetColumnIndex(0);
                 bool enabled = macro.enabled;
                 if (ImGui::Checkbox(("##Enabled" + std::to_string(i)).c_str(), &enabled))
+                {
                     macro.enabled = enabled;
+                    SaveMacrosToJson();
+                }
 
                 // Macro name column
                 ImGui::TableSetColumnIndex(1);
@@ -196,7 +203,8 @@ void RenderMainWindow()
                 if (ImGui::Button(("Delete##" + std::to_string(i)).c_str()))
                 {
                     DeleteMacro(i);
-                    --i; // Adjust index after deletion
+                    --i;
+                    SaveMacrosToJson();
                 }
             }
 
@@ -253,7 +261,7 @@ void RenderMacroEditor()
         ImGui::InputText("Macro Name", macroName, sizeof(macroName));
 
         ImGui::Separator();
-        
+
         // Slot selection
         ImGui::Text("Select Slot:");
         const char *slotNames[10] = {"Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5",
@@ -261,7 +269,7 @@ void RenderMacroEditor()
         ImGui::Combo("Macro Slot", &selectedSlot, slotNames, 10);
 
         ImGui::Separator();
-        
+
         // Action sequence display
         ImGui::Text("Action Sequence:");
         if (ImGui::BeginChild("ActionList", ImVec2(0, 200), true))
@@ -269,24 +277,24 @@ void RenderMacroEditor()
             for (size_t i = 0; i < editingActions.size(); ++i)
             {
                 ImGui::PushID(static_cast<int>(i));
-                
+
                 // Action number
                 ImGui::Text("%d.", static_cast<int>(i + 1));
                 ImGui::SameLine();
-                
+
                 // Action type (PRESS/RELEASE) with color coding
                 ImGui::TextColored(editingActions[i].isKeyDown ? ImVec4(0.2f, 0.8f, 0.2f, 1.0f) : ImVec4(0.8f, 0.2f, 0.2f, 1.0f),
                                    "%s", editingActions[i].isKeyDown ? "PRESS" : "RELEASE");
                 ImGui::SameLine();
-                
+
                 // Action bind name
                 ImGui::Text("%s", GetBindName(editingActions[i].gameBind));
                 ImGui::SameLine();
-                
+
                 // Delay information if present
                 if (editingActions[i].delayMs > 0)
                     ImGui::Text("(%dms delay)", editingActions[i].delayMs);
-                
+
                 // Delete action button
                 ImGui::SameLine(ImGui::GetWindowWidth() - 60);
                 if (ImGui::SmallButton("X"))
@@ -294,17 +302,17 @@ void RenderMacroEditor()
                     editingActions.erase(editingActions.begin() + i);
                     --i; // Adjust index after deletion
                 }
-                
+
                 ImGui::PopID();
             }
-            
+
             if (editingActions.empty())
                 ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No actions added yet.");
         }
         ImGui::EndChild();
 
         ImGui::Separator();
-        
+
         // Add new action section
         ImGui::Text("Add Action:");
 
@@ -316,14 +324,12 @@ void RenderMacroEditor()
         const char *bindNames[] = {
             "Weapon 1", "Weapon 2", "Weapon 3", "Weapon 4", "Weapon 5",
             "Heal Skill", "Utility 1", "Utility 2", "Utility 3", "Elite Skill",
-            "Dodge", "Jump", "Interact", "Weapon Swap"
-        };
+            "Dodge", "Jump", "Interact", "Weapon Swap"};
 
         EGameBinds bindValues[] = {
             GB_SkillWeapon1, GB_SkillWeapon2, GB_SkillWeapon3, GB_SkillWeapon4, GB_SkillWeapon5,
             GB_SkillHeal, GB_SkillUtility1, GB_SkillUtility2, GB_SkillUtility3, GB_SkillElite,
-            GB_MoveDodge, GB_MoveJump_SwimUp_FlyUp, GB_MiscInteract, GB_SkillWeaponSwap
-        };
+            GB_MoveDodge, GB_MoveJump_SwimUp_FlyUp, GB_MiscInteract, GB_SkillWeaponSwap};
 
         // Action selection controls
         static int bindIndex = 0;
@@ -382,33 +388,33 @@ void AddonOptions()
         OpenMacroEditor();
 
     ImGui::Separator();
-    
+
     // Keybind information
     ImGui::Text("Default Keybinds:");
     ImGui::BulletText("CTRL+SHIFT+K - Toggle Macro Manager");
     ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Assign macro keybinds through Nexus Input settings");
 
     ImGui::Separator();
-    
+
     // Statistics display
     ImGui::Text("Statistics:");
-    
+
     // Count active macros
     int activeMacros = 0;
     int totalActions = 0;
-    
+
     for (const auto &macro : g_macros)
     {
         if (!macro.actions.empty() && macro.name != "Empty")
             ++activeMacros;
         totalActions += static_cast<int>(macro.actions.size());
     }
-    
+
     ImGui::Text("Active Macros: %d / 10", activeMacros);
     ImGui::Text("Total Actions: %d", totalActions);
-    
+
     ImGui::Separator();
-    
+
     // Usage information
     ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.4f, 1.0f), "Usage Tips:");
     ImGui::BulletText("Each macro can contain up to any number of actions");
