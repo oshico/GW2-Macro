@@ -1,15 +1,3 @@
-/**
- * @file Shared.cpp
- * @brief Implementation of shared functionality for Macro Keybind Manager.
- *
- * Provides utilities for macro management, keybind registration, execution,
- * and JSON-based persistence. Includes helper functions for working with
- * game binds and basic JSON parsing/escaping.
- *
- * @author oshico
- * @version 0.1.2
- */
-
 #include "Shared.h"
 #include <vector>
 #include <string>
