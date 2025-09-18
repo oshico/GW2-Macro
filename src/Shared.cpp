@@ -570,7 +570,7 @@ bool SaveMacrosToJson()
 
         std::stringstream json;
         json << "{\n";
-        json << "  \"version\": \"0.1.2\",\n";
+        json << "  \"version\": \"0.1.4\",\n";
         json << "  \"macros\": [\n";
 
         for (size_t i = 0; i < g_macros.size(); ++i)
