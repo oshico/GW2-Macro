@@ -1,71 +1,65 @@
 # 🔧 GW2-Macro Manager Addon
 
-A C++ toolkit for managing **Guild Wars 2 macros** via the **Nexus Loader**. This project provides cross-platform build scripts, integrates with the **Nexus API**, and uses **ImGui** for its GUI. It includes tools for compiling, running, and managing macros efficiently on Windows, built from Linux.
+A C++ toolkit for managing **Guild Wars 2 macros** via the **Nexus Loader**.  
+It integrates with the **Nexus API**, uses **ImGui** for its GUI, and supports cross-platform builds (Linux → Windows).  
+
+👉 A prebuilt **.dll release** is already available for players who just want to use the addon.  
+👉 Developers or testers can also **compile it themselves** by following the quick guide below.  
 
 ---
 
 ## 📦 Features
 
-- **Manage up to 10 macros** simultaneously.
-- **Customizable macro keybinds** through Nexus Loader.
+- **Manage up to 10 macros** simultaneously  
+- **Customizable macro keybinds** through Nexus Loader  
 - **Macro actions** include:
   - Key presses
   - Key releases
-  - Delays
+  - Delays  
 - **Allowed macro keys**:
   - Weapon Actions
-  - Utility Skill Actions
+  - Utility Skills
   - Weapon Swap
   - Dodge
-  - Jump
+  - Jump  
 
 ---
 
-## 📁 Project Structure
-```
-src/
-├── src/
-│ ├── shared.cpp
-│ └── main.cpp
-├── include/
-│ ├── Nexus.h
-│ └── shared.h
-CMakeLists.txt
-build.sh
-```
----
+# ⚡ How to Use (Prebuilt DLL)
 
-## 🚀 Getting Started
-
-### ✅ Prerequisites
-
-- **C++17 or higher**
-- **CMake 3.15+**
-- **Linux (for cross-compiling to Windows)**
-- **Nexus API headers and libraries**
-- **ImGui library**
+1. Download the latest `.dll` from the [Releases](./releases) page.  
+2. Copy it into your **Guild Wars 2 addons folder**.  
+3. Launch GW2 and enable the macro manager via **Nexus Loader**.  
 
 ---
 
-### 📥 Installation
+# 🛠️ Compiling It Yourself (Optional)
 
-#### 1. Clone the repository
+## ✅ Prerequisites
 
-```
+- **Linux** (for cross-compiling to Windows)  
+- **C++17 or higher**  
+- **CMake 3.15+**  
+- **Nexus API headers + libraries**  
+- **ImGui library**  
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# 1. Clone the repository
 git clone https://github.com/oshico/GW2-Macro.git
 cd GW2-Macro/
-```
-#### 2. Build the project
 
-```
+# 2. Make the build script executable
 chmod +x build.sh
+
+# 3. Build the project
 ./build.sh
 ```
----
-### ⚙️ Usage
 
-Copy the generated .dll file to your Guild Wars 2 addons folder.</br>
-Launch GW2 and enable the macro manager via Nexus Loader.
+The compiled .dll will appear in the build/ directory.
 
 ### ✅ License
 
