@@ -20,28 +20,40 @@ endif()
 # Source files
 set(SOURCES
     src/main.cpp
+    src/GameModeCheck.cpp
+    src/MacroManager.cpp
+    src/Settings.cpp
     src/Shared.cpp
-    src/imgui_draw.cpp
-    src/imgui_tables.cpp
-    src/imgui_widgets.cpp
-    src/imgui.cpp
+    src/imgui/imgui.cpp
+    src/imgui/imgui_draw.cpp
+    src/imgui/imgui_tables.cpp
+    src/imgui/imgui_widgets.cpp
 )
 
 # Headers
 set(HEADERS
-    include/Nexus.h
-    include/Shared.h
-    include/imgui.h
-    include/imgui_internal.h
-    include/imconfig.h
-    include/imstb_rectpack.h
-    include/imstb_textedit.h
-    include/imstb_truetype.h
-    include/json.hpp
+    src/GameModeCheck.h
+    src/MacroManager.h
+    src/Settings.h
+    src/Shared.h
+    src/imgui/imgui.h
+    src/imgui/imconfig.h
+    src/imgui/imgui_internal.h
+    src/imgui/imstb_rectpack.h
+    src/imgui/imstb_textedit.h
+    src/imgui/imstb_truetype.h
+    src/mumble/Mumble.h
+    src/nexus/Nexus.h
+    src/nlohmann/json.hpp
 )
 
-# Include directories
-include_directories(include)
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/imgui
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mumble
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nexus
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nlohmann
+)
 
 # Create the addon DLL
 add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
@@ -78,6 +90,6 @@ endif()
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     ADDON_VERSION_MAJOR=0
     ADDON_VERSION_MINOR=1
-    ADDON_VERSION_BUILD=4
+    ADDON_VERSION_BUILD=5
     ADDON_VERSION_REVISION=0
 )
