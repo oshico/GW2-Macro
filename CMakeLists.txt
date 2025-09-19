@@ -24,6 +24,7 @@ set(SOURCES
     src/MacroManager.cpp
     src/Settings.cpp
     src/Shared.cpp
+    src/Module.cpp
     src/imgui/imgui.cpp
     src/imgui/imgui_draw.cpp
     src/imgui/imgui_tables.cpp
@@ -45,6 +46,13 @@ set(HEADERS
     src/mumble/Mumble.h
     src/nexus/Nexus.h
     src/nlohmann/json.hpp
+    src/Resource.h
+    src/Module.h
+)
+
+set(RESOURCE_FILES
+    src/Resource.rc
+    src/macro.png
 )
 
 include_directories(
@@ -56,7 +64,7 @@ include_directories(
 )
 
 # Create the addon DLL
-add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
+add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS} ${RESOURCE_FILES})
 
 # Set output name without lib prefix
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
@@ -66,6 +74,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
+
 
 # Windows-specific settings
 if(WIN32)

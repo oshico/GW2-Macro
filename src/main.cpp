@@ -4,6 +4,8 @@
 #include "GameModeCheck.h"
 #include "Settings.h"
 #include "imgui.h"
+#include "Resource.h"
+#include "Module.h"
 #include <cstring>
 
 void AddonLoad(AddonAPI_t *aApi);
@@ -35,7 +37,7 @@ extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef()
     AddonDef.Unload = AddonUnload;
     AddonDef.Flags = AF_None;
     AddonDef.Provider = EUpdateProvider::UP_GitHub;
-    AddonDef.UpdateLink = "https://github.com/oshico/GW2-Macro/";
+    AddonDef.UpdateLink = "https://github.com/oshico/GW2-Macro";
 
     return &AddonDef;
 }
@@ -51,7 +53,9 @@ void AddonLoad(AddonAPI_t *aApi)
     ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
     ImGui::SetAllocatorFunctions((void *(*)(size_t, void *))APIDefs->ImguiMalloc, (void (*)(void *, void *))APIDefs->ImguiFree);
 
-    APIDefs->QuickAccess_Add("MACRO_MANAGER_SHORTCUT", "NEXUS_ICON_SETTINGS", "NEXUS_ICON_SETTINGS", "MACRO_SHOW_WINDOW", "Open Macro Manager");
+    APIDefs->Textures_GetOrCreateFromResource("MACRO_MANAGER_ICON", IDB_MACRO_MANAGER_ICON,GetModuleHandle());
+    
+    APIDefs->QuickAccess_Add("MACRO_MANAGER_SHORTCUT", "MACRO_MANAGER_ICON", "MACRO_MANAGER_ICON", "MACRO_SHOW_WINDOW", "Open Macro Manager");
 
     APIDefs->GUI_Register(RT_Render, AddonRender);
     APIDefs->GUI_Register(RT_OptionsRender, AddonOptions);
