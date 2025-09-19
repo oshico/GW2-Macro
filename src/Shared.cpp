@@ -1,5 +1,6 @@
 #include "Shared.h"
 #include "Mumble.h"
+#include "json.hpp"
 #include <vector>
 #include <string>
 #include <thread>
@@ -208,11 +209,11 @@ EGameBinds StringToGameBind(const std::string &bindStr)
 
 /**
  * @brief Execute a macro's action sequence with game mode restrictions
- * 
+ *
  * Processes each KeyAction in the macro's sequence, respecting delays and
  * press/release states. Only executes if the macro is enabled AND the
  * current game mode permits macro usage (PVE only).
- * 
+ *
  * @param macro The macro to execute
  * @note Automatically blocks execution in competitive modes (PvP/WvW)
  * @note Shows a user alert when macros are blocked in competitive content
@@ -407,142 +408,6 @@ void OpenMacroEditor(int index)
 }
 
 // =============================================================================
-// HELPER FUNCTIONS FOR MANUAL JSON HANDLING
-// =============================================================================
-
-/**
- * @brief Escape special characters in a string for JSON output.
- *
- * Replaces quotes, backslashes, and control characters with their JSON escape
- * sequences.
- *
- * @param str Input string to escape.
- * @return std::string Escaped JSON-compatible string.
- */
-std::string EscapeJsonString(const std::string &str)
-{
-    std::string escaped;
-    for (char c : str)
-    {
-        switch (c)
-        {
-        case '"':
-            escaped += "\\\"";
-            break;
-        case '\\':
-            escaped += "\\\\";
-            break;
-        case '\b':
-            escaped += "\\b";
-            break;
-        case '\f':
-            escaped += "\\f";
-            break;
-        case '\n':
-            escaped += "\\n";
-            break;
-        case '\r':
-            escaped += "\\r";
-            break;
-        case '\t':
-            escaped += "\\t";
-            break;
-        default:
-            if (c < 0x20)
-            {
-                escaped += "\\u0000";
-            }
-            else
-            {
-                escaped += c;
-            }
-            break;
-        }
-    }
-    return escaped;
-}
-
-/**
- * @brief Unescape JSON-encoded string back into normal text.
- *
- * Converts escaped sequences like `\n`, `\t`, `\\`, and `\"` into their actual
- * character representations.
- *
- * @param str JSON-escaped string.
- * @return std::string Unescaped string.
- */
-std::string UnescapeJsonString(const std::string &str)
-{
-    std::string unescaped;
-    for (size_t i = 0; i < str.length(); ++i)
-    {
-        if (str[i] == '\\' && i + 1 < str.length())
-        {
-            switch (str[i + 1])
-            {
-            case '"':
-                unescaped += '"';
-                ++i;
-                break;
-            case '\\':
-                unescaped += '\\';
-                ++i;
-                break;
-            case 'b':
-                unescaped += '\b';
-                ++i;
-                break;
-            case 'f':
-                unescaped += '\f';
-                ++i;
-                break;
-            case 'n':
-                unescaped += '\n';
-                ++i;
-                break;
-            case 'r':
-                unescaped += '\r';
-                ++i;
-                break;
-            case 't':
-                unescaped += '\t';
-                ++i;
-                break;
-            default:
-                unescaped += str[i];
-                break;
-            }
-        }
-        else
-        {
-            unescaped += str[i];
-        }
-    }
-    return unescaped;
-}
-
-// =============================================================================
-// CONFIGURATION FILE PATH
-// =============================================================================
-
-/**
- * @brief Get the full path to the macros configuration file.
- *
- * Uses the Nexus API to retrieve the addon directory for "Macro" and appends
- * `macros.json`.
- *
- * @return std::string Full file path to the configuration file.
- */
-std::string GetConfigFilePath()
-{
-    if (!APIDefs)
-        return "";
-
-    std::string addonDir = APIDefs->Paths_GetAddonDirectory("Macro");
-    return addonDir + "/macros.json";
-}
-
-// =============================================================================
 // JSON SAVE FUNCTIONALITY
 // =============================================================================
 
@@ -556,70 +421,45 @@ std::string GetConfigFilePath()
  */
 bool SaveMacrosToJson()
 {
+    std::string addonPath = APIDefs->Paths_GetAddonDirectory("MacroManager");
+    std::string configPath = APIDefs->Paths_GetAddonDirectory("MacroManager/macros.json");
     try
     {
-        std::string configPath = GetConfigFilePath();
         if (configPath.empty())
         {
-            APIDefs->Log(LOGL_WARNING, "MacroManager", "Failed to get config file path");
+            if (APIDefs)
+                APIDefs->Log(LOGL_WARNING, "MacroManager", "No config file path available");
             return false;
         }
 
-        std::filesystem::path filePath(configPath);
-        std::filesystem::create_directories(filePath.parent_path());
+        std::filesystem::create_directories(std::filesystem::path(configPath).parent_path());
 
-        std::stringstream json;
-        json << "{\n";
-        json << "  \"version\": \"0.1.4\",\n";
-        json << "  \"macros\": [\n";
+        nlohmann::json j;
+        j["version"] = "0.1.4";
 
-        for (size_t i = 0; i < g_macros.size(); ++i)
+        nlohmann::json macrosArray = nlohmann::json::array();
+        for (const auto &macro : g_macros)
         {
-            const Macro &macro = g_macros[i];
-
-            json << "    {\n";
-            json << "      \"name\": \"" << EscapeJsonString(macro.name) << "\",\n";
-            json << "      \"identifier\": \"" << EscapeJsonString(macro.identifier) << "\",\n";
-            json << "      \"enabled\": " << (macro.enabled ? "true" : "false") << ",\n";
-            json << "      \"actions\": [\n";
-
-            for (size_t j = 0; j < macro.actions.size(); ++j)
+            nlohmann::json macroObj;
+            macroObj["name"] = macro.name;
+            macroObj["identifier"] = macro.identifier;
+            macroObj["enabled"] = macro.enabled;
+            nlohmann::json actionsArray = nlohmann::json::array();
+            for (const auto &action : macro.actions)
             {
-                const KeyAction &action = macro.actions[j];
-
-                json << "        {\n";
-                json << "          \"gameBind\": \"" << GameBindToString(action.gameBind) << "\",\n";
-                json << "          \"isKeyDown\": " << (action.isKeyDown ? "true" : "false") << ",\n";
-                json << "          \"delayMs\": " << action.delayMs << "\n";
-                json << "        }";
-
-                if (j < macro.actions.size() - 1)
-                    json << ",";
-                json << "\n";
+                nlohmann::json actionObj;
+                actionObj["gameBind"] = GameBindToString(action.gameBind);
+                actionObj["isKeyDown"] = action.isKeyDown;
+                actionObj["delayMs"] = action.delayMs;
+                actionsArray.push_back(actionObj);
             }
-
-            json << "      ]\n";
-            json << "    }";
-
-            if (i < g_macros.size() - 1)
-                json << ",";
-            json << "\n";
+            macroObj["actions"] = actionsArray;
+            macrosArray.push_back(macroObj);
         }
-
-        json << "  ]\n";
-        json << "}\n";
+        j["macros"] = macrosArray;
 
         std::ofstream file(configPath);
-        if (!file.is_open())
-        {
-            APIDefs->Log(LOGL_WARNING, "MacroManager", "Failed to open config file for writing");
-            return false;
-        }
-
-        file << json.str();
-        file.close();
-
-        APIDefs->Log(LOGL_INFO, "MacroManager", "Macros saved successfully");
+        file << j.dump(2);
         return true;
     }
     catch (const std::exception &e)
@@ -629,105 +469,6 @@ bool SaveMacrosToJson()
                          ("Failed to save macros: " + std::string(e.what())).c_str());
         return false;
     }
-}
-
-// =============================================================================
-// SIMPLE JSON PARSING FUNCTIONS
-// =============================================================================
-
-/**
- * @brief Extract a JSON string value by key starting from a position.
- *
- * @param json JSON string to parse.
- * @param key Key name to extract.
- * @param pos Reference to current parse position; updated after extraction.
- * @return std::string Extracted and unescaped string value.
- */
-std::string ExtractJsonString(const std::string &json, const std::string &key, size_t &pos)
-{
-    std::string searchKey = "\"" + key + "\":";
-    size_t keyPos = json.find(searchKey, pos);
-    if (keyPos == std::string::npos)
-        return "";
-
-    size_t valueStart = json.find("\"", keyPos + searchKey.length());
-    if (valueStart == std::string::npos)
-        return "";
-
-    valueStart++;
-    size_t valueEnd = json.find("\"", valueStart);
-    if (valueEnd == std::string::npos)
-        return "";
-
-    pos = valueEnd + 1;
-    return UnescapeJsonString(json.substr(valueStart, valueEnd - valueStart));
-}
-
-/**
- * @brief Extract a boolean value from JSON by key starting from a position.
- *
- * @param json JSON string to parse.
- * @param key Key name to extract.
- * @param pos Reference to current parse position; updated after extraction.
- * @return true if value is true, false if false or key not found.
- */
-bool ExtractJsonBool(const std::string &json, const std::string &key, size_t &pos)
-{
-    std::string searchKey = "\"" + key + "\":";
-    size_t keyPos = json.find(searchKey, pos);
-    if (keyPos == std::string::npos)
-        return false;
-
-    size_t valueStart = keyPos + searchKey.length();
-    std::string substr = json.substr(valueStart, 10);
-
-    if (substr.find("true") != std::string::npos)
-    {
-        pos = valueStart + 4;
-        return true;
-    }
-    else if (substr.find("false") != std::string::npos)
-    {
-        pos = valueStart + 5;
-        return false;
-    }
-
-    return false;
-}
-
-/**
- * @brief Extract an integer value from JSON by key starting from a position.
- *
- * @param json JSON string to parse.
- * @param key Key name to extract.
- * @param pos Reference to current parse position; updated after extraction.
- * @return int Parsed integer value, or 0 if not found.
- */
-int ExtractJsonInt(const std::string &json, const std::string &key, size_t &pos)
-{
-    std::string searchKey = "\"" + key + "\":";
-    size_t keyPos = json.find(searchKey, pos);
-    if (keyPos == std::string::npos)
-        return 0;
-
-    size_t valueStart = keyPos + searchKey.length();
-    size_t valueEnd = valueStart;
-
-    while (valueEnd < json.length() && (json[valueEnd] == ' ' || json[valueEnd] == '\t' || json[valueEnd] == '\n'))
-        valueEnd++;
-
-    valueStart = valueEnd;
-
-    while (valueEnd < json.length() && (isdigit(json[valueEnd]) || json[valueEnd] == '-'))
-        valueEnd++;
-
-    if (valueEnd > valueStart)
-    {
-        pos = valueEnd;
-        return std::stoi(json.substr(valueStart, valueEnd - valueStart));
-    }
-
-    return 0;
 }
 
 // =============================================================================
@@ -745,9 +486,10 @@ int ExtractJsonInt(const std::string &json, const std::string &key, size_t &pos)
  */
 bool LoadMacrosFromJson()
 {
+    std::string addonPath = APIDefs->Paths_GetAddonDirectory("MacroManager");
+    std::string configPath = APIDefs->Paths_GetAddonDirectory("MacroManager/macros.json");
     try
     {
-        std::string configPath = GetConfigFilePath();
         if (configPath.empty())
         {
             APIDefs->Log(LOGL_INFO, "MacroManager", "No config file path available, using defaults");
@@ -761,119 +503,45 @@ bool LoadMacrosFromJson()
             return false;
         }
 
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        file.close();
+        nlohmann::json j;
+        file >> j;
 
-        std::string json = buffer.str();
-
-        size_t macrosStart = json.find("\"macros\":");
-        if (macrosStart == std::string::npos)
+        if (j.contains("macros") && j["macros"].is_array())
         {
-            APIDefs->Log(LOGL_WARNING, "MacroManager", "Invalid config file format");
-            return false;
-        }
-
-        size_t arrayStart = json.find("[", macrosStart);
-        size_t arrayEnd = json.find("]", arrayStart);
-        if (arrayStart == std::string::npos || arrayEnd == std::string::npos)
-        {
-            APIDefs->Log(LOGL_WARNING, "MacroManager", "Invalid macros array format");
-            return false;
-        }
-
-        size_t pos = arrayStart + 1;
-        int macroIndex = 0;
-
-        while (pos < arrayEnd && macroIndex < static_cast<int>(g_macros.size()))
-        {
-            size_t objStart = json.find("{", pos);
-            if (objStart == std::string::npos || objStart > arrayEnd)
-                break;
-
-            size_t objEnd = objStart + 1;
-            int braceCount = 1;
-
-            while (objEnd < json.length() && braceCount > 0)
+            size_t index = 0;
+            for (const auto &macroObj : j["macros"])
             {
-                if (json[objEnd] == '{')
-                    braceCount++;
-                else if (json[objEnd] == '}')
-                    braceCount--;
-                objEnd++;
-            }
+                if (index >= g_macros.size())
+                    break;
 
-            if (braceCount > 0)
-                break;
+                g_macros[index].name = macroObj.value("name", "Empty");
+                g_macros[index].enabled = macroObj.value("enabled", false);
 
-            size_t macroPos = objStart;
-            std::string name = ExtractJsonString(json, "name", macroPos);
-            std::string identifier = ExtractJsonString(json, "identifier", macroPos);
-
-            macroPos = objStart;
-            bool enabled = ExtractJsonBool(json, "enabled", macroPos);
-
-            if (!name.empty() && !identifier.empty() && macroIndex < static_cast<int>(g_macros.size()))
-            {
-                g_macros[macroIndex].name = name;
-                g_macros[macroIndex].identifier = identifier;
-                g_macros[macroIndex].enabled = enabled;
-                g_macros[macroIndex].actions.clear();
-
-                size_t actionsStart = json.find("\"actions\":", objStart);
-                if (actionsStart != std::string::npos && actionsStart < objEnd)
+                if (macroObj.contains("actions") && macroObj["actions"].is_array())
                 {
-                    size_t actionsArrayStart = json.find("[", actionsStart);
-                    size_t actionsArrayEnd = json.find("]", actionsArrayStart);
-
-                    if (actionsArrayStart != std::string::npos && actionsArrayEnd != std::string::npos)
+                    for (const auto &actionObj : macroObj["actions"])
                     {
-                        size_t actionPos = actionsArrayStart + 1;
-
-                        while (actionPos < actionsArrayEnd)
+                        if (actionObj.is_object() &&
+                            actionObj.contains("gameBind") && actionObj["gameBind"].is_string() &&
+                            actionObj.contains("isKeyDown") && actionObj["isKeyDown"].is_boolean() &&
+                            actionObj.contains("delayMs") && actionObj["delayMs"].is_number())
                         {
-                            size_t actionObjStart = json.find("{", actionPos);
-                            if (actionObjStart == std::string::npos || actionObjStart > actionsArrayEnd)
-                                break;
+                            std::string bindStr = actionObj["gameBind"];
+                            EGameBinds gameBind = StringToGameBind(bindStr);
+                            bool isKeyDown = actionObj["isKeyDown"];
+                            int delayMs = actionObj["delayMs"];
 
-                            size_t actionObjEnd = actionObjStart + 1;
-                            int actionBraceCount = 1;
-
-                            while (actionObjEnd < json.length() && actionBraceCount > 0)
-                            {
-                                if (json[actionObjEnd] == '{')
-                                    actionBraceCount++;
-                                else if (json[actionObjEnd] == '}')
-                                    actionBraceCount--;
-                                actionObjEnd++;
-                            }
-
-                            size_t actionDataPos = actionObjStart;
-                            std::string gameBindStr = ExtractJsonString(json, "gameBind", actionDataPos);
-
-                            actionDataPos = actionObjStart;
-                            bool isKeyDown = ExtractJsonBool(json, "isKeyDown", actionDataPos);
-
-                            actionDataPos = actionObjStart;
-                            int delayMs = ExtractJsonInt(json, "delayMs", actionDataPos);
-
-                            if (!gameBindStr.empty())
-                            {
-                                EGameBinds gameBind = StringToGameBind(gameBindStr);
-                                g_macros[macroIndex].actions.emplace_back(gameBind, isKeyDown, delayMs);
-                            }
-
-                            actionPos = actionObjEnd;
+                            g_macros[index].actions.emplace_back(gameBind, isKeyDown, delayMs);
+                        }
+                        else
+                        {
+                            APIDefs->Log(LOGL_WARNING, "MacroManager", "Skipping invalid action in macro");
                         }
                     }
                 }
+                index++;
             }
-
-            pos = objEnd;
-            macroIndex++;
         }
-
-        APIDefs->Log(LOGL_INFO, "MacroManager", "Macros loaded successfully");
         return true;
     }
     catch (const std::exception &e)
@@ -881,6 +549,15 @@ bool LoadMacrosFromJson()
         if (APIDefs)
             APIDefs->Log(LOGL_WARNING, "MacroManager",
                          ("Failed to load macros: " + std::string(e.what())).c_str());
+
+        for (size_t i = 0; i < g_macros.size(); ++i)
+        {
+            g_macros[i].name = "Empty";
+            g_macros[i].identifier = "MACRO_" + std::to_string(i + 1);
+            g_macros[i].enabled = false;
+            g_macros[i].actions.clear();
+        }
+
         return false;
     }
 }
@@ -891,11 +568,11 @@ bool LoadMacrosFromJson()
 
 /**
  * @brief Check if the player is currently in a competitive game mode (PvP/WvW)
- * 
+ *
  * This function uses the Mumble link data to detect competitive modes by checking
  * the IsCompetitive flag in the game context. This is the most reliable method
  * for detecting PvP and WvW content.
- * 
+ *
  * @return true if player is in PvP or WvW mode, false otherwise
  * @note Uses Mumble link data accessed through Nexus API
  */
@@ -918,11 +595,11 @@ bool IsInCompetitiveMode()
 
 /**
  * @brief Check if the player is currently in PVE game mode
- * 
- * This is a convenience function that simply returns the inverse of 
+ *
+ * This is a convenience function that simply returns the inverse of
  * IsInCompetitiveMode(). Returns true when the player is NOT in competitive
  * modes (PvP/WvW).
- * 
+ *
  * @return true if player is in PVE mode, false if in competitive mode
  * @see IsInCompetitiveMode()
  */
@@ -934,10 +611,10 @@ bool IsInPVEMode()
 
 /**
  * @brief Get a human-readable string describing the current game mode
- * 
+ *
  * Returns a descriptive string indicating whether the player is in
  * competitive mode (PvP/WvW) or PVE mode. Useful for UI display.
- * 
+ *
  * @return "COMPETITIVE (PVP/WVW)" or "PVE" depending on current mode
  * @see IsInCompetitiveMode()
  */
@@ -950,11 +627,11 @@ const char *GetCurrentGameModeString()
 
 /**
  * @brief Check if macro execution is currently permitted
- * 
+ *
  * This function determines whether macros can be executed based on the
  * current game mode. Macros are only allowed in PVE content and are
  * automatically blocked in competitive modes (PvP/WvW).
- * 
+ *
  * @return true if macros can be executed (PVE mode), false otherwise
  * @note This is the primary function used by ExecuteMacro() to enforce restrictions
  * @see ExecuteMacro(), IsInPVEMode()

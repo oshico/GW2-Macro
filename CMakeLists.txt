@@ -37,6 +37,7 @@ set(HEADERS
     include/imstb_rectpack.h
     include/imstb_textedit.h
     include/imstb_truetype.h
+    include/json.hpp
 )
 
 # Include directories

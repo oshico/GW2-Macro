@@ -41,12 +41,13 @@ void AddonLoad(AddonAPI_t *aApi)
 {
     APIDefs = aApi;
     APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Keybind Manager v0.1.4 loaded!");
+    ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
+    ImGui::SetAllocatorFunctions((void *(*)(size_t, void *))APIDefs->ImguiMalloc, (void (*)(void *, void *))APIDefs->ImguiFree);
 
-    if (APIDefs->ImguiContext)
-    {
-        ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
-        ImGui::SetAllocatorFunctions((void *(*)(size_t, void *))APIDefs->ImguiMalloc, (void (*)(void *, void *))APIDefs->ImguiFree);
-    }
+    APIDefs->QuickAccess_Add("MACRO_MANAGER_SHORTCUT", "NEXUS_ICON_SETTINGS", "NEXUS_ICON_SETTINGS", "MACRO_SHOW_WINDOW", "Open Macro Manager");
+
+    APIDefs->GUI_Register(RT_Render, AddonRender);
+    APIDefs->GUI_Register(RT_OptionsRender, AddonOptions);
 
     LoadMacrosFromJson();
 
@@ -55,9 +56,6 @@ void AddonLoad(AddonAPI_t *aApi)
 
     for (auto &macro : g_macros)
         macro.enabled = false;
-
-    APIDefs->GUI_Register(RT_Render, AddonRender);
-    APIDefs->GUI_Register(RT_OptionsRender, AddonOptions);
 
     SetupKeybinds();
 }
@@ -70,6 +68,8 @@ void AddonUnload()
 
         for (const auto &macro : g_macros)
             UnregisterKeybind(macro.identifier);
+
+        APIDefs->QuickAccess_Remove("MACRO_MANAGER_SHORTCUT");
 
         APIDefs->GUI_Deregister(AddonRender);
         APIDefs->GUI_Deregister(AddonOptions);

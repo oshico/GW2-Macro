@@ -3,6 +3,7 @@
 
 #include "Nexus.h"
 #include "Mumble.h"
+#include "json.hpp"
 #include <vector>
 #include <string>
 
@@ -171,11 +172,11 @@ void UnregisterKeybind(const std::string &identifier);
 
 /**
  * @brief Execute a macro's action sequence with game mode restrictions
- * 
+ *
  * Processes each KeyAction in the macro's sequence, respecting delays and
  * press/release states. Only executes if the macro is enabled AND the
  * current game mode permits macro usage (PVE only).
- * 
+ *
  * @param macro The macro to execute
  * @note Automatically blocks execution in competitive modes (PvP/WvW)
  * @note Shows a user alert when macros are blocked in competitive content
@@ -218,23 +219,17 @@ bool SaveMacrosToJson();
  */
 bool LoadMacrosFromJson();
 
-/**
- * @brief Get the path to the configuration file
- * @return Full path to the macro configuration JSON file
- */
-std::string GetConfigFilePath();
-
 // =============================================================================
 // PVE/Competitive MODE CHECKS
 // =============================================================================
 
 /**
  * @brief Check if the player is currently in a competitive game mode (PvP/WvW)
- * 
+ *
  * This function uses the Mumble link data to detect competitive modes by checking
  * the IsCompetitive flag in the game context. This is the most reliable method
  * for detecting PvP and WvW content.
- * 
+ *
  * @return true if player is in PvP or WvW mode, false otherwise
  * @note Uses Mumble link data accessed through Nexus API
  */
@@ -242,11 +237,11 @@ bool IsInCompetitiveMode();
 
 /**
  * @brief Check if the player is currently in PVE game mode
- * 
- * This is a convenience function that simply returns the inverse of 
+ *
+ * This is a convenience function that simply returns the inverse of
  * IsInCompetitiveMode(). Returns true when the player is NOT in competitive
  * modes (PvP/WvW).
- * 
+ *
  * @return true if player is in PVE mode, false if in competitive mode
  * @see IsInCompetitiveMode()
  */
@@ -254,22 +249,22 @@ bool IsInPVEMode();
 
 /**
  * @brief Get a human-readable string describing the current game mode
- * 
+ *
  * Returns a descriptive string indicating whether the player is in
  * competitive mode (PvP/WvW) or PVE mode. Useful for UI display.
- * 
+ *
  * @return "COMPETITIVE (PVP/WVW)" or "PVE" depending on current mode
  * @see IsInCompetitiveMode()
  */
-const char* GetCurrentGameModeString();
+const char *GetCurrentGameModeString();
 
 /**
  * @brief Check if macro execution is currently permitted
- * 
+ *
  * This function determines whether macros can be executed based on the
  * current game mode. Macros are only allowed in PVE content and are
  * automatically blocked in competitive modes (PvP/WvW).
- * 
+ *
  * @return true if macros can be executed (PVE mode), false otherwise
  * @note This is the primary function used by ExecuteMacro() to enforce restrictions
  * @see ExecuteMacro(), IsInPVEMode()
