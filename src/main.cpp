@@ -34,7 +34,7 @@ extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef()
     AddonDef.Load = AddonLoad;
     AddonDef.Unload = AddonUnload;
     AddonDef.Flags = AF_None;
-    AddonDef.Provider = EUpdateProvider_GitHub;
+    AddonDef.Provider = EUpdateProvider::UP_GitHub;
     AddonDef.UpdateLink = "https://github.com/oshico/GW2-Macro/";
 
     return &AddonDef;
