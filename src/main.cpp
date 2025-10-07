@@ -29,7 +29,7 @@ extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef()
     AddonDef.Name = "Macro Manager";
     AddonDef.Version.Major = 0;
     AddonDef.Version.Minor = 1;
-    AddonDef.Version.Build = 8;
+    AddonDef.Version.Build = 9;
     AddonDef.Version.Revision = 0;
     AddonDef.Author = "oshico";
     AddonDef.Description = "A macro keybind manager for executing sequences of game actions with timing control.";
@@ -37,7 +37,7 @@ extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef()
     AddonDef.Unload = AddonUnload;
     AddonDef.Flags = AF_None;
     AddonDef.Provider = EUpdateProvider::UP_GitHub;
-    AddonDef.UpdateLink = "https://github.com/oshico/GW2-MACRO-Releases";
+    AddonDef.UpdateLink = "https://github.com/oshico/GW2-MACRO";
 
     return &AddonDef;
 }
@@ -49,7 +49,7 @@ extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef()
 void AddonLoad(AddonAPI_t *aApi)
 {
     APIDefs = aApi;
-    APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Keybind Manager v0.1.8 loaded!");
+    APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Keybind Manager v0.1.9 loaded!");
     ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
     ImGui::SetAllocatorFunctions((void *(*)(size_t, void *))APIDefs->ImguiMalloc, (void (*)(void *, void *))APIDefs->ImguiFree);
 
@@ -340,7 +340,7 @@ void AddonOptions()
 {
     ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
 
-    ImGui::Text("Macro Keybind Manager v0.1.8");
+    ImGui::Text("Macro Keybind Manager v0.1.9");
     ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
                        "Execute sequences of game actions with precise timing control");
 
