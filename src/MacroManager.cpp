@@ -3,7 +3,8 @@
 #include "GameModeCheck.h"
 #include <thread>
 #include <chrono>
-
+#include <mutex>
+#include <atomic>
 
 // =============================================================================
 // GLOBAL MACRO VARIABLES
@@ -18,6 +19,8 @@ std::vector<Macro> g_macros = {
 bool g_showMainWindow = false;
 bool g_showMacroEditor = false;
 int g_selectedMacroIndex = -1;
+std::mutex g_macroMutex;
+std::atomic<bool> g_killMacros(false);
 
 // =============================================================================
 // KEYBIND HANDLING
@@ -34,12 +37,35 @@ void ProcessKeybind(const char *aIdentifier, bool aIsRelease)
         return;
     }
 
-    for (const auto &macro : g_macros)
+     if (strcmp(aIdentifier, "MACRO_KILL") == 0)
     {
-        if (macro.identifier == aIdentifier)
+        KillAllMacros();
+        return;
+    }
+
+    if (g_macroMutex.try_lock())
+    {
+        if (g_killMacros.load())
         {
-            ExecuteMacro(macro);
-            break;
+            g_macroMutex.unlock();
+            return;
+        }
+
+        for (const auto &macro : g_macros)
+        {
+            if (macro.identifier == aIdentifier)
+            {
+                ExecuteMacro(macro);
+                break;
+            }
+        }
+        g_macroMutex.unlock();
+    }
+    else
+    {
+        if (APIDefs)
+        {
+            APIDefs->GUI_SendAlert("Another macro is currently running. Wait or use Kill All.");
         }
     }
 }
@@ -50,7 +76,8 @@ void SetupKeybinds()
         return;
 
     APIDefs->InputBinds_RegisterWithString("MACRO_SHOW_WINDOW", ProcessKeybind, "CTRL+SHIFT+K");
-
+    APIDefs->InputBinds_RegisterWithString("MACRO_KILL", ProcessKeybind, "CTRL+SHIFT+X");
+    
     for (const auto &macro : g_macros)
         RegisterKeybind(macro);
 }
@@ -99,8 +126,32 @@ void ExecuteMacro(const Macro &macro)
 
     for (const auto &action : macro.actions)
     {
+        if (g_killMacros.load())
+        {
+            APIDefs->Log(LOGL_INFO, "MacroManager", "Macro execution stopped by Kill All");
+            g_killMacros.store(false);
+            return;
+        }
+
         if (action.delayMs > 0)
-            std::this_thread::sleep_for(std::chrono::milliseconds(action.delayMs));
+        {
+            int remainingDelay = action.delayMs;
+            const int chunkSize = 50;
+
+            while (remainingDelay > 0 && !g_killMacros.load())
+            {
+                int currentChunk = (remainingDelay > chunkSize) ? chunkSize : remainingDelay;
+                std::this_thread::sleep_for(std::chrono::milliseconds(currentChunk));
+                remainingDelay -= currentChunk;
+            }
+
+            if (g_killMacros.load())
+            {
+                APIDefs->Log(LOGL_INFO, "MacroManager", "Macro execution stopped during delay");
+                g_killMacros.store(false);
+                return;
+            }
+        }
 
         if (action.isKeyDown)
             APIDefs->GameBinds_PressAsync(action.gameBind);
@@ -115,7 +166,54 @@ void ExecuteMacro(const Macro &macro)
              GetBindName(action.gameBind))
                 .c_str());
     }
+
+    APIDefs->Log(LOGL_INFO, "MacroManager", ("Macro completed: " + macro.name).c_str());
 }
+
+// =============================================================================
+// KILL ALL FUNCTIONALITY
+// =============================================================================
+
+void KillAllMacros()
+{
+    g_killMacros.store(true);
+    
+    std::lock_guard<std::mutex> lock(g_macroMutex);
+    
+    g_killMacros.store(false);
+    
+    ReleaseAllGameKeys();
+
+    APIDefs->Log(LOGL_INFO, "MacroManager", "All macros killed");
+    APIDefs->GUI_SendAlert("All macros stopped");
+}
+
+void ReleaseAllGameKeys()
+{
+    if (!APIDefs)
+        return;
+
+    EGameBinds allBinds[] = {
+        GB_SkillWeapon1, GB_SkillWeapon2, GB_SkillWeapon3, GB_SkillWeapon4, GB_SkillWeapon5,
+        GB_SkillHeal, GB_SkillUtility1, GB_SkillUtility2, GB_SkillUtility3, GB_SkillElite,
+        GB_MoveDodge, GB_MoveJump_SwimUp_FlyUp, GB_MiscInteract, GB_SkillWeaponSwap,
+        GB_MoveForward, GB_MoveBackward, GB_MoveLeft, GB_MoveRight,
+        GB_SkillProfession1, GB_SkillProfession2, GB_SkillProfession3, 
+        GB_SkillProfession4, GB_SkillProfession5
+    };
+
+    APIDefs->Log(LOGL_DEBUG, "MacroManager", "Releasing all game keys...");
+
+    for (EGameBinds bind : allBinds)
+    {
+        APIDefs->GameBinds_ReleaseAsync(bind);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    APIDefs->Log(LOGL_INFO, "MacroManager", "All game keys released");
+}
+
 
 // =============================================================================
 // MACRO MANAGEMENT

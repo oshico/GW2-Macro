@@ -8,6 +8,7 @@
 #include "Module.h"
 #include <cstring>
 
+
 void AddonLoad(AddonAPI_t *aApi);
 void AddonUnload();
 void AddonRender();
@@ -49,7 +50,7 @@ extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef()
 void AddonLoad(AddonAPI_t *aApi)
 {
     APIDefs = aApi;
-    APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Keybind Manager v0.1.9 loaded!");
+    APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Keybind Manager v0.2.0 loaded!");
     ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
     ImGui::SetAllocatorFunctions((void *(*)(size_t, void *))APIDefs->ImguiMalloc, (void (*)(void *, void *))APIDefs->ImguiFree);
 
@@ -75,6 +76,7 @@ void AddonUnload()
 {
     if (APIDefs)
     {
+        KillAllMacros();
         SaveMacrosToJson();
 
         for (const auto &macro : g_macros)
@@ -86,6 +88,8 @@ void AddonUnload()
         APIDefs->GUI_Deregister(AddonOptions);
 
         APIDefs->InputBinds_Deregister("MACRO_SHOW_WINDOW");
+        APIDefs->InputBinds_Deregister("MACRO_KILL");
+
 
         APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Manager unloaded!");
     }
@@ -166,7 +170,6 @@ void RenderMainWindow()
                         SaveMacrosToJson();
                     }
 
-                    // Name
                     ImGui::TableSetColumnIndex(1);
                     ImGui::TextUnformatted(macro.name.c_str());
 
@@ -340,7 +343,7 @@ void AddonOptions()
 {
     ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
 
-    ImGui::Text("Macro Keybind Manager v0.1.9");
+    ImGui::Text("Macro Keybind Manager v0.2.0");
     ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
                        "Execute sequences of game actions with precise timing control");
 
