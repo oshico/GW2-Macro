@@ -24,7 +24,7 @@ bool SaveMacrosToJson()
         std::filesystem::create_directories(std::filesystem::path(configPath).parent_path());
 
         nlohmann::json j;
-        j["version"] = "0.1.4";
+        j["version"] = "0.3.0";
 
         nlohmann::json macrosArray = nlohmann::json::array();
         for (const auto &macro : g_macros)
@@ -33,12 +33,40 @@ bool SaveMacrosToJson()
             macroObj["name"] = macro.name;
             macroObj["identifier"] = macro.identifier;
             macroObj["enabled"] = macro.enabled;
+            
             nlohmann::json actionsArray = nlohmann::json::array();
             for (const auto &action : macro.actions)
             {
                 nlohmann::json actionObj;
-                actionObj["gameBind"] = GameBindToString(action.gameBind);
-                actionObj["isKeyDown"] = action.isKeyDown;
+                
+                if (action.inputType == EInputType::GameBind)
+                {
+                    actionObj["inputType"] = "GameBind";
+                    actionObj["gameBind"] = GameBindToString(action.gameBind);
+                    actionObj["isKeyDown"] = action.isKeyDown;
+                }
+                else if (action.inputType == EInputType::MouseButton)
+                {
+                    actionObj["inputType"] = "MouseButton";
+                    actionObj["mouseButton"] = MouseButtonToString(action.mouseButton);
+                    actionObj["isKeyDown"] = action.isKeyDown;
+                    actionObj["moveBeforeClick"] = action.moveBeforeClick;
+                    
+                    if (action.moveBeforeClick)
+                    {
+                        actionObj["mouseX"] = action.mousePosition.x;
+                        actionObj["mouseY"] = action.mousePosition.y;
+                        actionObj["positionType"] = PositionTypeToString(action.mousePosition.positionType);
+                    }
+                }
+                else if (action.inputType == EInputType::MouseMove)
+                {
+                    actionObj["inputType"] = "MouseMove";
+                    actionObj["mouseX"] = action.mousePosition.x;
+                    actionObj["mouseY"] = action.mousePosition.y;
+                    actionObj["positionType"] = PositionTypeToString(action.mousePosition.positionType);
+                }
+                
                 actionObj["delayMs"] = action.delayMs;
                 actionsArray.push_back(actionObj);
             }
@@ -101,21 +129,66 @@ bool LoadMacrosFromJson()
                 {
                     for (const auto &actionObj : macroObj["actions"])
                     {
-                        if (actionObj.is_object() &&
-                            actionObj.contains("gameBind") && actionObj["gameBind"].is_string() &&
-                            actionObj.contains("isKeyDown") && actionObj["isKeyDown"].is_boolean() &&
-                            actionObj.contains("delayMs") && actionObj["delayMs"].is_number())
+                        if (!actionObj.is_object() || !actionObj.contains("inputType"))
                         {
-                            std::string bindStr = actionObj["gameBind"];
-                            EGameBinds gameBind = StringToGameBind(bindStr);
-                            bool isKeyDown = actionObj["isKeyDown"];
-                            int delayMs = actionObj["delayMs"];
+                            APIDefs->Log(LOGL_WARNING, "MacroManager", "Skipping invalid action in macro");
+                            continue;
+                        }
 
-                            g_macros[index].actions.emplace_back(gameBind, isKeyDown, delayMs);
+                        std::string inputTypeStr = actionObj["inputType"];
+                        int delayMs = actionObj.value("delayMs", 0);
+
+                        if (inputTypeStr == "GameBind")
+                        {
+                            if (actionObj.contains("gameBind") && actionObj.contains("isKeyDown"))
+                            {
+                                std::string bindStr = actionObj["gameBind"];
+                                bool isKeyDown = actionObj["isKeyDown"];
+                                EGameBinds gameBind = StringToGameBind(bindStr);
+                                g_macros[index].actions.emplace_back(gameBind, isKeyDown, delayMs);
+                            }
+                        }
+                        else if (inputTypeStr == "MouseButton")
+                        {
+                            if (actionObj.contains("mouseButton") && actionObj.contains("isKeyDown"))
+                            {
+                                std::string buttonStr = actionObj["mouseButton"];
+                                bool isKeyDown = actionObj["isKeyDown"];
+                                bool moveBeforeClick = actionObj.value("moveBeforeClick", false);
+                                EMouseButton mouseButton = StringToMouseButton(buttonStr);
+                                
+                                if (moveBeforeClick && actionObj.contains("mouseX") && actionObj.contains("mouseY"))
+                                {
+                                    int mouseX = actionObj["mouseX"];
+                                    int mouseY = actionObj["mouseY"];
+                                    std::string posTypeStr = actionObj.value("positionType", "Absolute");
+                                    EPositionType posType = StringToPositionType(posTypeStr);
+                                    
+                                    MousePosition pos(mouseX, mouseY, posType);
+                                    g_macros[index].actions.emplace_back(mouseButton, isKeyDown, pos, delayMs);
+                                }
+                                else
+                                {
+                                    g_macros[index].actions.emplace_back(mouseButton, isKeyDown, delayMs);
+                                }
+                            }
+                        }
+                        else if (inputTypeStr == "MouseMove")
+                        {
+                            if (actionObj.contains("mouseX") && actionObj.contains("mouseY"))
+                            {
+                                int mouseX = actionObj["mouseX"];
+                                int mouseY = actionObj["mouseY"];
+                                std::string posTypeStr = actionObj.value("positionType", "Absolute");
+                                EPositionType posType = StringToPositionType(posTypeStr);
+                                
+                                MousePosition pos(mouseX, mouseY, posType);
+                                g_macros[index].actions.emplace_back(pos, delayMs);
+                            }
                         }
                         else
                         {
-                            APIDefs->Log(LOGL_WARNING, "MacroManager", "Skipping invalid action in macro");
+                            APIDefs->Log(LOGL_WARNING, "MacroManager", "Unknown input type in macro");
                         }
                     }
                 }

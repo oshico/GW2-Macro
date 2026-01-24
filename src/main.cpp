@@ -29,8 +29,8 @@ extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef()
     AddonDef.APIVersion = NEXUS_API_VERSION;
     AddonDef.Name = "Macro Manager";
     AddonDef.Version.Major = 0;
-    AddonDef.Version.Minor = 2;
-    AddonDef.Version.Build = 1;
+    AddonDef.Version.Minor = 3;
+    AddonDef.Version.Build = 0;
     AddonDef.Version.Revision = 0;
     AddonDef.Author = "oshico";
     AddonDef.Description = "A macro keybind manager for executing sequences of game actions with timing control.";
@@ -50,7 +50,7 @@ extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef()
 void AddonLoad(AddonAPI_t *aApi)
 {
     APIDefs = aApi;
-    APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Keybind Manager v0.2.1 loaded!");
+    APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Keybind Manager v0.3.0 loaded!");
     ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
     ImGui::SetAllocatorFunctions((void *(*)(size_t, void *))APIDefs->ImguiMalloc, (void (*)(void *, void *))APIDefs->ImguiFree);
 
@@ -89,7 +89,6 @@ void AddonUnload()
 
         APIDefs->InputBinds_Deregister("MACRO_SHOW_WINDOW");
         APIDefs->InputBinds_Deregister("MACRO_KILL");
-
 
         APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Manager unloaded!");
     }
@@ -233,7 +232,7 @@ void RenderMacroEditor()
         lastSelectedMacroIndex = g_selectedMacroIndex;
     }
 
-    ImGui::SetNextWindowSize(ImVec2(720, 520), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(800, 650), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Macro Editor", &g_showMacroEditor))
     {
         ImGui::InputText("Macro Name", macroName, sizeof(macroName));
@@ -255,13 +254,44 @@ void RenderMacroEditor()
                 ImGui::Text("%d.", (int)i + 1);
                 ImGui::SameLine();
 
-                ImGui::TextColored(editingActions[i].isKeyDown
-                                       ? ImVec4(0.2f, 0.8f, 0.2f, 1.0f)
-                                       : ImVec4(0.8f, 0.2f, 0.2f, 1.0f),
-                                   "%s", editingActions[i].isKeyDown ? "PRESS" : "RELEASE");
+                if (editingActions[i].inputType == EInputType::MouseMove)
+                {
+                    ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "MOVE");
+                    ImGui::SameLine();
+                    ImGui::TextColored(ImVec4(0.6f, 0.6f, 1.0f, 1.0f), 
+                                      "to (%d, %d) [%s]", 
+                                      editingActions[i].mousePosition.x,
+                                      editingActions[i].mousePosition.y,
+                                      editingActions[i].mousePosition.positionType == EPositionType::Absolute ? "Abs" : "Rel");
+                }
+                else
+                {
+                    ImGui::TextColored(editingActions[i].isKeyDown
+                                           ? ImVec4(0.2f, 0.8f, 0.2f, 1.0f)
+                                           : ImVec4(0.8f, 0.2f, 0.2f, 1.0f),
+                                       "%s", editingActions[i].isKeyDown ? "PRESS" : "RELEASE");
 
-                ImGui::SameLine();
-                ImGui::TextUnformatted(GetBindName(editingActions[i].gameBind));
+                    ImGui::SameLine();
+                    
+                    if (editingActions[i].inputType == EInputType::GameBind)
+                    {
+                        ImGui::TextUnformatted(GetBindName(editingActions[i].gameBind));
+                    }
+                    else
+                    {
+                        ImGui::TextColored(ImVec4(0.6f, 0.6f, 1.0f, 1.0f), "%s", 
+                                          GetMouseButtonName(editingActions[i].mouseButton));
+                        
+                        if (editingActions[i].moveBeforeClick)
+                        {
+                            ImGui::SameLine();
+                            ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f),
+                                              "@ (%d, %d)", 
+                                              editingActions[i].mousePosition.x,
+                                              editingActions[i].mousePosition.y);
+                        }
+                    }
+                }
 
                 if (editingActions[i].delayMs > 0)
                 {
@@ -287,37 +317,138 @@ void RenderMacroEditor()
         ImGui::Separator();
         ImGui::Text("Add Action:");
 
+        static int inputTypeIndex = 0;
+        const char *inputTypes[] = {"Keyboard/Game Action", "Mouse Button", "Mouse Move"};
+        ImGui::Combo("Input Type", &inputTypeIndex, inputTypes, 3);
+
         static EGameBinds selectedBind = GB_SkillWeapon1;
+        static EMouseButton selectedMouseButton = EMouseButton::Left;
         static bool isKeyDown = true;
         static int delayMs = 0;
+        static int mouseX = 0;
+        static int mouseY = 0;
+        static int positionTypeIndex = 0;
+        static bool usePosition = false;
 
-        const char *bindNames[] = {
-            "Weapon 1", "Weapon 2", "Weapon 3", "Weapon 4", "Weapon 5",
-            "Heal Skill", "Utility 1", "Utility 2", "Utility 3", "Elite Skill",
-            "Dodge", "Jump", "Interact", "Weapon Swap"};
+        if (inputTypeIndex == 0)
+        {
+            const char *bindNames[] = {
+                "Weapon 1", "Weapon 2", "Weapon 3", "Weapon 4", "Weapon 5",
+                "Heal Skill", "Utility 1", "Utility 2", "Utility 3", "Elite Skill",
+                "Profession 1", "Profession 2", "Profession 3", "Profession 4", "Profession 5",
+                "Profession 6", "Profession 7",
+                "Dodge", "Jump", "Interact", "Weapon Swap"};
 
-        EGameBinds bindValues[] = {
-            GB_SkillWeapon1, GB_SkillWeapon2, GB_SkillWeapon3, GB_SkillWeapon4, GB_SkillWeapon5,
-            GB_SkillHeal, GB_SkillUtility1, GB_SkillUtility2, GB_SkillUtility3, GB_SkillElite,
-            GB_MoveDodge, GB_MoveJump_SwimUp_FlyUp, GB_MiscInteract, GB_SkillWeaponSwap};
+            EGameBinds bindValues[] = {
+                GB_SkillWeapon1, GB_SkillWeapon2, GB_SkillWeapon3, GB_SkillWeapon4, GB_SkillWeapon5,
+                GB_SkillHeal, GB_SkillUtility1, GB_SkillUtility2, GB_SkillUtility3, GB_SkillElite,
+                GB_SkillProfession1, GB_SkillProfession2, GB_SkillProfession3, GB_SkillProfession4,
+                GB_SkillProfession5, GB_SkillProfession6, GB_SkillProfession7,
+                GB_MoveDodge, GB_MoveJump_SwimUp_FlyUp, GB_MiscInteract, GB_SkillWeaponSwap};
 
-        static int bindIndex = 0;
-        if (ImGui::Combo("Game Action", &bindIndex, bindNames, IM_ARRAYSIZE(bindNames)))
-            selectedBind = bindValues[bindIndex];
+            static int bindIndex = 0;
+            if (ImGui::Combo("Game Action", &bindIndex, bindNames, IM_ARRAYSIZE(bindNames)))
+                selectedBind = bindValues[bindIndex];
 
-        ImGui::Checkbox("Press (uncheck = Release)", &isKeyDown);
-        ImGui::SameLine();
+            ImGui::Checkbox("Press (uncheck = Release)", &isKeyDown);
+        }
+        else if (inputTypeIndex == 1)
+        {
+            const char *mouseButtonNames[] = {
+                "Left Click", "Right Click", "Middle Click", "Side Button 1 (X1)", "Side Button 2 (X2)"};
+
+            EMouseButton mouseButtonValues[] = {
+                EMouseButton::Left, EMouseButton::Right, EMouseButton::Middle,
+                EMouseButton::X1, EMouseButton::X2};
+
+            static int mouseButtonIndex = 0;
+            if (ImGui::Combo("Mouse Button", &mouseButtonIndex, mouseButtonNames, IM_ARRAYSIZE(mouseButtonNames)))
+                selectedMouseButton = mouseButtonValues[mouseButtonIndex];
+
+            ImGui::Checkbox("Press (uncheck = Release)", &isKeyDown);
+            
+            ImGui::Spacing();
+            ImGui::Checkbox("Click at specific position", &usePosition);
+            
+            if (usePosition)
+            {
+                ImGui::Indent();
+                ImGui::SetNextItemWidth(120);
+                ImGui::InputInt("X Position", &mouseX);
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(120);
+                ImGui::InputInt("Y Position", &mouseY);
+                
+                const char *posTypes[] = {"Absolute (Screen)", "Relative (Current)"};
+                ImGui::Combo("Position Type", &positionTypeIndex, posTypes, 2);
+                
+                if (ImGui::Button("Get Current Mouse Position"))
+                {
+                    POINT cursorPos;
+                    GetCursorPos(&cursorPos);
+                    mouseX = cursorPos.x;
+                    mouseY = cursorPos.y;
+                }
+                ImGui::Unindent();
+            }
+        }
+        else if (inputTypeIndex == 2)
+        {
+            ImGui::SetNextItemWidth(120);
+            ImGui::InputInt("X Position", &mouseX);
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(120);
+            ImGui::InputInt("Y Position", &mouseY);
+            
+            const char *posTypes[] = {"Absolute (Screen)", "Relative (Current)"};
+            ImGui::Combo("Position Type", &positionTypeIndex, posTypes, 2);
+            
+            if (ImGui::Button("Get Current Mouse Position"))
+            {
+                POINT cursorPos;
+                GetCursorPos(&cursorPos);
+                mouseX = cursorPos.x;
+                mouseY = cursorPos.y;
+            }
+            
+            ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), 
+                              "Current position will be: (%d, %d)", mouseX, mouseY);
+        }
+
+        ImGui::Spacing();
         ImGui::SetNextItemWidth(100);
         ImGui::InputInt("Delay (ms)", &delayMs);
 
         ImGui::Spacing();
-        if (ImGui::Button("Add Action"))
+        if (ImGui::Button("Add Action", ImVec2(120, 0)))
         {
-            editingActions.emplace_back(selectedBind, isKeyDown, delayMs);
+            if (inputTypeIndex == 0)
+            {
+                editingActions.emplace_back(selectedBind, isKeyDown, delayMs);
+            }
+            else if (inputTypeIndex == 1)
+            {
+                if (usePosition)
+                {
+                    EPositionType posType = (positionTypeIndex == 0) ? EPositionType::Absolute : EPositionType::Relative;
+                    MousePosition pos(mouseX, mouseY, posType);
+                    editingActions.emplace_back(selectedMouseButton, isKeyDown, pos, delayMs);
+                }
+                else
+                {
+                    editingActions.emplace_back(selectedMouseButton, isKeyDown, delayMs);
+                }
+            }
+            else if (inputTypeIndex == 2)
+            {
+                EPositionType posType = (positionTypeIndex == 0) ? EPositionType::Absolute : EPositionType::Relative;
+                MousePosition pos(mouseX, mouseY, posType);
+                editingActions.emplace_back(pos, delayMs);
+            }
             delayMs = 0;
         }
         ImGui::SameLine();
-        if (ImGui::Button("Clear All"))
+        if (ImGui::Button("Clear All", ImVec2(120, 0)))
             editingActions.clear();
 
         ImGui::Separator();
@@ -343,7 +474,7 @@ void AddonOptions()
 {
     ImGui::SetCurrentContext((ImGuiContext *)APIDefs->ImguiContext);
 
-    ImGui::Text("Macro Keybind Manager v0.2.1");
+    ImGui::Text("Macro Keybind Manager v0.3.0");
     ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
                        "Execute sequences of game actions with precise timing control");
 
@@ -351,6 +482,7 @@ void AddonOptions()
 
     ImGui::Text("Default Keybinds:");
     ImGui::BulletText("CTRL+SHIFT+K - Toggle Macro Manager");
+    ImGui::BulletText("CTRL+SHIFT+X - Kill All Running Macros");
     ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
                        "Assign macro keybinds through Nexus Input settings");
 
@@ -384,9 +516,10 @@ void AddonOptions()
 
     if (ImGui::CollapsingHeader("Usage Tips"))
     {
-        ImGui::BulletText("Each macro can contain up to any number of actions");
+        ImGui::BulletText("Each macro can contain unlimited actions");
         ImGui::BulletText("Use delays between actions for timing-sensitive sequences");
         ImGui::BulletText("Press and Release actions allow for held key combinations");
+        ImGui::BulletText("Mouse position support for clicking at specific coordinates");
         ImGui::BulletText("Disable macros to prevent accidental execution");
     }
 

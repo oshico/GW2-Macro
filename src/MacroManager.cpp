@@ -111,6 +111,59 @@ void UnregisterKeybind(const std::string &identifier)
 // MACRO EXECUTION
 // =============================================================================
 
+void MoveMouse(const MousePosition &pos)
+{
+    if (pos.positionType == EPositionType::Absolute)
+    {
+        SetCursorPos(pos.x, pos.y);
+    }
+    else
+    {
+        POINT currentPos;
+        GetCursorPos(&currentPos);
+        SetCursorPos(currentPos.x + pos.x, currentPos.y + pos.y);
+    }
+}
+
+void SendMouseInput(EMouseButton button, bool isDown)
+{
+    if (!APIDefs)
+        return;
+
+    INPUT input = {};
+    input.type = INPUT_MOUSE;
+
+    switch (button)
+    {
+    case EMouseButton::Left:
+        input.mi.dwFlags = isDown ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
+        break;
+    case EMouseButton::Right:
+        input.mi.dwFlags = isDown ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
+        break;
+    case EMouseButton::Middle:
+        input.mi.dwFlags = isDown ? MOUSEEVENTF_MIDDLEDOWN : MOUSEEVENTF_MIDDLEUP;
+        break;
+    case EMouseButton::X1:
+        input.mi.dwFlags = isDown ? MOUSEEVENTF_XDOWN : MOUSEEVENTF_XUP;
+        input.mi.mouseData = XBUTTON1;
+        break;
+    case EMouseButton::X2:
+        input.mi.dwFlags = isDown ? MOUSEEVENTF_XDOWN : MOUSEEVENTF_XUP;
+        input.mi.mouseData = XBUTTON2;
+        break;
+    }
+
+    SendInput(1, &input, sizeof(INPUT));
+}
+
+void SendMouseClickAtPosition(EMouseButton button, bool isDown, const MousePosition &pos)
+{
+    MoveMouse(pos);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    SendMouseInput(button, isDown);
+}
+
 void ExecuteMacro(const Macro &macro)
 {
     if (!macro.enabled)
@@ -153,18 +206,61 @@ void ExecuteMacro(const Macro &macro)
             }
         }
 
-        if (action.isKeyDown)
-            APIDefs->GameBinds_PressAsync(action.gameBind);
-        else
-            APIDefs->GameBinds_ReleaseAsync(action.gameBind);
+        if (action.inputType == EInputType::GameBind)
+        {
+            if (action.isKeyDown)
+                APIDefs->GameBinds_PressAsync(action.gameBind);
+            else
+                APIDefs->GameBinds_ReleaseAsync(action.gameBind);
 
-        APIDefs->Log(
-            LOGL_DEBUG,
-            "MacroManager",
-            ("Action executed: " +
-             std::string(action.isKeyDown ? "PRESS " : "RELEASE ") +
-             GetBindName(action.gameBind))
-                .c_str());
+            APIDefs->Log(
+                LOGL_DEBUG,
+                "MacroManager",
+                ("Action executed: " +
+                 std::string(action.isKeyDown ? "PRESS " : "RELEASE ") +
+                 GetBindName(action.gameBind))
+                    .c_str());
+        }
+        else if (action.inputType == EInputType::MouseButton)
+        {
+            if (action.moveBeforeClick)
+            {
+                SendMouseClickAtPosition(action.mouseButton, action.isKeyDown, action.mousePosition);
+                
+                APIDefs->Log(
+                    LOGL_DEBUG,
+                    "MacroManager",
+                    ("Mouse action at (" + std::to_string(action.mousePosition.x) + ", " + 
+                     std::to_string(action.mousePosition.y) + "): " +
+                     std::string(action.isKeyDown ? "PRESS " : "RELEASE ") +
+                     GetMouseButtonName(action.mouseButton))
+                        .c_str());
+            }
+            else
+            {
+                SendMouseInput(action.mouseButton, action.isKeyDown);
+
+                APIDefs->Log(
+                    LOGL_DEBUG,
+                    "MacroManager",
+                    ("Mouse action executed: " +
+                     std::string(action.isKeyDown ? "PRESS " : "RELEASE ") +
+                     GetMouseButtonName(action.mouseButton))
+                        .c_str());
+            }
+        }
+        else if (action.inputType == EInputType::MouseMove)
+        {
+            MoveMouse(action.mousePosition);
+
+            APIDefs->Log(
+                LOGL_DEBUG,
+                "MacroManager",
+                ("Mouse moved to (" + std::to_string(action.mousePosition.x) + ", " + 
+                 std::to_string(action.mousePosition.y) + ") " +
+                 (action.mousePosition.positionType == EPositionType::Absolute ? "[Absolute]" : "[Relative]"))
+                    .c_str());
+        }
     }
 
     APIDefs->Log(LOGL_INFO, "MacroManager", ("Macro completed: " + macro.name).c_str());
@@ -199,7 +295,7 @@ void ReleaseAllGameKeys()
         GB_MoveDodge, GB_MoveJump_SwimUp_FlyUp, GB_MiscInteract, GB_SkillWeaponSwap,
         GB_MoveForward, GB_MoveBackward, GB_MoveLeft, GB_MoveRight,
         GB_SkillProfession1, GB_SkillProfession2, GB_SkillProfession3, 
-        GB_SkillProfession4, GB_SkillProfession5
+        GB_SkillProfession4, GB_SkillProfession5, GB_SkillProfession6, GB_SkillProfession7
     };
 
     APIDefs->Log(LOGL_DEBUG, "MacroManager", "Releasing all game keys...");
@@ -323,6 +419,20 @@ const char *GetBindName(EGameBinds bind)
         return "Utility 3";
     case GB_SkillElite:
         return "Elite Skill";
+    case GB_SkillProfession1:
+        return "Profession 1";
+    case GB_SkillProfession2:
+        return "Profession 2";
+    case GB_SkillProfession3:
+        return "Profession 3";
+    case GB_SkillProfession4:
+        return "Profession 4";
+    case GB_SkillProfession5:
+        return "Profession 5";
+    case GB_SkillProfession6:
+        return "Profession 6";
+    case GB_SkillProfession7:
+        return "Profession 7";
     case GB_MoveDodge:
         return "Dodge";
     case GB_MoveJump_SwimUp_FlyUp:
@@ -386,6 +496,10 @@ std::string GameBindToString(EGameBinds bind)
         return "GB_SkillProfession4";
     case GB_SkillProfession5:
         return "GB_SkillProfession5";
+    case GB_SkillProfession6:
+        return "GB_SkillProfession6";
+    case GB_SkillProfession7:
+        return "GB_SkillProfession7";
     default:
         return "GB_SkillWeapon1";
     }
@@ -439,6 +553,74 @@ EGameBinds StringToGameBind(const std::string &bindStr)
         return GB_SkillProfession4;
     if (bindStr == "GB_SkillProfession5")
         return GB_SkillProfession5;
+    if (bindStr == "GB_SkillProfession6")
+        return GB_SkillProfession6;
+    if (bindStr == "GB_SkillProfession7")
+        return GB_SkillProfession7;
 
     return GB_SkillWeapon1;
+}
+
+const char *GetMouseButtonName(EMouseButton button)
+{
+    switch (button)
+    {
+    case EMouseButton::Left:
+        return "Mouse Left";
+    case EMouseButton::Right:
+        return "Mouse Right";
+    case EMouseButton::Middle:
+        return "Mouse Middle";
+    case EMouseButton::X1:
+        return "Mouse X1";
+    case EMouseButton::X2:
+        return "Mouse X2";
+    default:
+        return "Unknown Mouse Button";
+    }
+}
+
+std::string MouseButtonToString(EMouseButton button)
+{
+    switch (button)
+    {
+    case EMouseButton::Left:
+        return "MB_Left";
+    case EMouseButton::Right:
+        return "MB_Right";
+    case EMouseButton::Middle:
+        return "MB_Middle";
+    case EMouseButton::X1:
+        return "MB_X1";
+    case EMouseButton::X2:
+        return "MB_X2";
+    default:
+        return "MB_Left";
+    }
+}
+
+EMouseButton StringToMouseButton(const std::string &buttonStr)
+{
+    if (buttonStr == "MB_Left")
+        return EMouseButton::Left;
+    if (buttonStr == "MB_Right")
+        return EMouseButton::Right;
+    if (buttonStr == "MB_Middle")
+        return EMouseButton::Middle;
+    if (buttonStr == "MB_X1")
+        return EMouseButton::X1;
+    if (buttonStr == "MB_X2")
+        return EMouseButton::X2;
+
+    return EMouseButton::Left;
+}
+
+std::string PositionTypeToString(EPositionType type)
+{
+    return (type == EPositionType::Absolute) ? "Absolute" : "Relative";
+}
+
+EPositionType StringToPositionType(const std::string &typeStr)
+{
+    return (typeStr == "Absolute") ? EPositionType::Absolute : EPositionType::Relative;
 }
