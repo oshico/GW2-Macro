@@ -1,35 +1,51 @@
+<p align="center">
+  <a href="https://discord.gg/raidcore">
+    <img src="https://discord.com/api/guilds/410828272679518241/widget.png?style=banner2">
+  </a>
+</p>
+<p align="center">
+  <a href="https://github.com/oshico/GW2-MACRO/releases">
+    <img src="https://img.shields.io/github/downloads/oshico/GW2-MACRO/total?style=for-the-badge"  alt="downloads"/>
+  </a>
+  <a href="https://github.com/oshico/GW2-MACRO/releases">
+    <img src="https://img.shields.io/github/v/release/oshico/GW2-MACRO?style=for-the-badge" alt="releases">
+  </a>
+</p>
+
+---
+
 # 🔧 GW2-Macro Manager Addon
 
 A C++ toolkit for managing **Guild Wars 2 macros** via the **Nexus Loader**.  
-It integrates with the **Nexus API**, uses **ImGui** for its GUI, and supports cross-platform builds (Linux → Windows).  
+It integrates with the **Nexus API**, uses **ImGui** for its GUI, and supports cross-platform builds (Linux → Windows).
 
 👉 A prebuilt **.dll release** is already available for players who just want to use the addon.  
-👉 Developers or testers can also **compile it themselves** by following the quick guide below.  
+👉 Developers or testers can also **compile it themselves** by following the quick guide below.
 
 ---
 
 ## 📦 Features
 
-- **Manage up to 10 macros** simultaneously  
-- **Customizable macro keybinds** through Nexus Loader  
+- **Manage up to 10 macros** simultaneously
+- **Customizable macro keybinds** through Nexus Loader
 - **Macro actions** include:
   - Key presses
   - Key releases
-  - Delays  
+  - Delays
 - **Allowed macro keys**:
   - Weapon Actions
   - Utility Skills
   - Weapon Swap
   - Dodge
-  - Jump  
+  - Jump
 
 ---
 
 # ⚡ How to Use (Prebuilt DLL)
 
-1. Download the latest `.dll` from the [Releases](./releases) page.  
-2. Copy it into your **Guild Wars 2 addons folder**.  
-3. Launch GW2 and enable the macro manager via **Nexus Loader**.  
+1. Download the latest `.dll` from the [Releases](./releases) page.
+2. Copy it into your **Guild Wars 2 addons folder**.
+3. Launch GW2 and enable the macro manager via **Nexus Loader**.
 
 ---
 
@@ -37,11 +53,11 @@ It integrates with the **Nexus API**, uses **ImGui** for its GUI, and supports c
 
 ## ✅ Prerequisites
 
-- **Linux** (for cross-compiling to Windows)  
-- **C++17 or higher**  
-- **CMake 3.15+**  
-- **Nexus API headers + libraries**  
-- **ImGui library**  
+- **Linux** (for cross-compiling to Windows)
+- **C++17 or higher**
+- **CMake 3.15+**
+- **Nexus API headers + libraries**
+- **ImGui library**
 
 ---
 
@@ -61,16 +77,18 @@ chmod +x build.sh
 
 The compiled .dll will appear in the build/ directory.
 
+---
+
 ### ✅ License
 
 GNU General Public License — see LICENSE for details.
 
 ### ✍️ Author
 
-oshico
+<a href="https://github.com/oshico"> oshico </a>
 
 ### 📬 Feedback or Issues?
 
 Open an issue or submit a pull request on GitHub.
 
-Contact via GitHub profile: oshico
+Contact via GitHub profile: <a href="https://github.com/oshico"> oshico </a>
