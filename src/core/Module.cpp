@@ -13,11 +13,12 @@ extern "C" BOOL WINAPI DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID
     case DLL_THREAD_DETACH:
     case DLL_PROCESS_DETACH:
         break;
+    default: ;
     }
     return TRUE;
 }
 
-HMODULE GetModuleHandle()
+HMODULE GetAddonModuleHandle()
 {
     return g_hModule;
 }
