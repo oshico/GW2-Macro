@@ -1,16 +1,22 @@
 #!/bin/bash
 
-# Nexus Addon Template Build Script
-# Cleans and builds the addon using MinGW-w64 cross-compilation
+# Nexus Addon Build Script
+# Supports both Debug and Release builds for cross-compilation (Linux -> Windows)
+# 
+# Usage:
+#   ./build.sh          # Build in Release mode (default, optimized)
+#   ./build.sh Debug    # Build in Debug mode (with symbols)
 
 set -e  # Exit on any error
 
-echo "=== Nexus Addon Template Build Script ==="
+BUILD_TYPE="${1:-Release}"  # Default to Release, pass "Debug" for debug build
+
+echo "=== Building in ${BUILD_TYPE} mode ==="
 
 # Check if MinGW-w64 is installed
 if ! command -v x86_64-w64-mingw32-gcc &> /dev/null; then
-    echo "Error: x86_64-w64-mingw32-gcc not found. Please install MinGW-w64:"
-    echo "  sudo apt install mingw-w64 cmake make"
+    echo "Error: x86_64-w64-mingw32-gcc not found. Install with:"
+    echo "  sudo pacman -S mingw-w64-gcc"
     exit 1
 fi
 
@@ -33,7 +39,7 @@ cmake .. \
     -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
     -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
     -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres \
-    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 
 # Build the project
 echo "Building addon..."
@@ -43,6 +49,7 @@ make -j$(nproc)
 if [ -f "bin/Macro.dll" ]; then
     echo ""
     echo "=== BUILD SUCCESSFUL ==="
+    echo "Build type: ${BUILD_TYPE}"
     echo "Output: $(pwd)/bin/Macro.dll"
     echo "Size: $(du -h bin/Macro.dll | cut -f1)"
     echo ""
