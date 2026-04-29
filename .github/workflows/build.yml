@@ -1,0 +1,73 @@
+name: Build Macro DLL
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        build_type: [ Release ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install MinGW-w64
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64
+
+      - name: Set build type label
+        id: branchinfo
+        run: |
+          BRANCH="${GITHUB_REF##*/}"
+          
+          if [ "$BRANCH" = "main" ]; then
+            echo "channel=release" >> $GITHUB_OUTPUT
+          else
+            echo "channel=nightly" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate version
+        id: version
+        run: |
+          if [ "${{ steps.branchinfo.outputs.channel }}" = "release" ]; then
+            VERSION="v$(date +'%Y.%m.%d.%H%M')"
+          else
+            VERSION="nightly-$(date +'%Y.%m.%d.%H%M')-$(git rev-parse --short HEAD)"
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Generated version: $VERSION"
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_SYSTEM_NAME=Windows \
+            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+            -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+            -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPROJECT_VERSION=${{ steps.version.outputs.version }}
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: Macro-${{ steps.branchinfo.outputs.channel }}-${{ steps.version.outputs.version }}
+          path: build/bin/*.dll
+
+      - name: Create GitHub Release (main only)
+        if: steps.branchinfo.outputs.channel == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Macro ${{ steps.version.outputs.version }}
+          files: build/bin/*.dll
