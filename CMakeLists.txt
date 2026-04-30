@@ -63,10 +63,10 @@ target_compile_definitions(Macro PRIVATE
 # =============================================================================
 # COMPILE OPTIONS (PER-BUILD-TYPE)
 # Purpose: Set compiler flags that differ between Debug and Release
-# 
+#
 # Debug flags:
 #   -g        : Generate debug symbols (uncomment below if needed)
-# 
+#
 # Release flags:
 #   -O3       : Maximum optimization level
 #   -flto     : Link-time optimization for better performance
@@ -94,6 +94,7 @@ target_compile_options(Macro PRIVATE
 #   -flto                             : Link-time optimization (matches compile flag)
 # =============================================================================
 target_link_options(Macro PRIVATE
+        -static
         -static-libgcc
         -static-libstdc++
         -Wl,--export-all-symbols
