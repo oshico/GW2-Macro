@@ -2,13 +2,16 @@
 #include "../macro/Macro.h"
 #include "../macro/MacroManager.h"
 #include "../utils/StringConversions.h"
-#include "../core/Shared.h"
+#include "../core/Context.h"
 #include <imgui.h>
 #include <cstring>
 #include <windows.h>
 
-void RenderMacroEditor() {
-    if (!g_showMacroEditor)
+extern Context g_context;
+
+void RenderMacroEditor()
+{
+    if (!g_context.showMacroEditor)
         return;
 
     static char macroName[128] = "";
@@ -16,28 +19,34 @@ void RenderMacroEditor() {
     static int lastSelectedMacroIndex = -2;
     static int selectedSlot = 0;
 
-    if (g_selectedMacroIndex != lastSelectedMacroIndex) {
-        if (g_selectedMacroIndex >= 0 && g_selectedMacroIndex < static_cast<int>(g_macros.size())) {
-            const Macro &macro = g_macros[g_selectedMacroIndex];
+    if (g_context.selectedMacroIndex != lastSelectedMacroIndex)
+    {
+        if (g_context.selectedMacroIndex >= 0 && g_context.selectedMacroIndex < static_cast<int>(g_context.macros.
+            size()))
+        {
+            const Macro& macro = g_context.macros[g_context.selectedMacroIndex];
             strncpy_s(macroName, sizeof(macroName), macro.name.c_str(), _TRUNCATE);
             editingActions = macro.actions;
 
             if (const std::string id = macro.identifier; id.find("MACRO_") != std::string::npos)
                 selectedSlot = std::stoi(id.substr(6)) - 1;
-        } else {
+        }
+        else
+        {
             strcpy_s(macroName, sizeof(macroName), "New Macro");
             editingActions.clear();
             selectedSlot = 0;
         }
-        lastSelectedMacroIndex = g_selectedMacroIndex;
+        lastSelectedMacroIndex = g_context.selectedMacroIndex;
     }
 
     ImGui::SetNextWindowSize(ImVec2(800, 650), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Macro Editor", &g_showMacroEditor)) {
+    if (ImGui::Begin("Macro Editor", &g_context.showMacroEditor))
+    {
         ImGui::InputText("Macro Name", macroName, sizeof(macroName));
 
         ImGui::Separator();
-        const char *slotNames[10] = {
+        const char* slotNames[10] = {
             "Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5",
             "Slot 6", "Slot 7", "Slot 8", "Slot 9", "Slot 10"
         };
@@ -45,14 +54,17 @@ void RenderMacroEditor() {
 
         ImGui::Separator();
         ImGui::Text("Action Sequence:");
-        if (ImGui::BeginChild("ActionList", ImVec2(0, 220), true)) {
-            for (size_t i = 0; i < editingActions.size(); ++i) {
+        if (ImGui::BeginChild("ActionList", ImVec2(0, 220), true))
+        {
+            for (size_t i = 0; i < editingActions.size(); ++i)
+            {
                 ImGui::PushID(static_cast<int>(i));
 
                 ImGui::Text("%d.", static_cast<int>(i) + 1);
                 ImGui::SameLine();
 
-                if (editingActions[i].inputType == EInputType::MouseMove) {
+                if (editingActions[i].inputType == EInputType::MouseMove)
+                {
                     ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "MOVE");
                     ImGui::SameLine();
                     ImGui::TextColored(ImVec4(0.6f, 0.6f, 1.0f, 1.0f),
@@ -62,7 +74,9 @@ void RenderMacroEditor() {
                                        editingActions[i].mousePosition.positionType == EPositionType::Absolute
                                            ? "Abs"
                                            : "Rel");
-                } else {
+                }
+                else
+                {
                     ImGui::TextColored(editingActions[i].isKeyDown
                                            ? ImVec4(0.2f, 0.8f, 0.2f, 1.0f)
                                            : ImVec4(0.8f, 0.2f, 0.2f, 1.0f),
@@ -70,13 +84,17 @@ void RenderMacroEditor() {
 
                     ImGui::SameLine();
 
-                    if (editingActions[i].inputType == EInputType::GameBind) {
+                    if (editingActions[i].inputType == EInputType::GameBind)
+                    {
                         ImGui::TextUnformatted(GetBindName(editingActions[i].gameBind));
-                    } else {
+                    }
+                    else
+                    {
                         ImGui::TextColored(ImVec4(0.6f, 0.6f, 1.0f, 1.0f), "%s",
                                            GetMouseButtonName(editingActions[i].mouseButton));
 
-                        if (editingActions[i].moveBeforeClick) {
+                        if (editingActions[i].moveBeforeClick)
+                        {
                             ImGui::SameLine();
                             ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f),
                                                "@ (%d, %d)",
@@ -86,13 +104,15 @@ void RenderMacroEditor() {
                     }
                 }
 
-                if (editingActions[i].delayMs > 0) {
+                if (editingActions[i].delayMs > 0)
+                {
                     ImGui::SameLine();
                     ImGui::Text("(%dms delay)", editingActions[i].delayMs);
                 }
 
                 ImGui::SameLine(ImGui::GetWindowWidth() - 60);
-                if (ImGui::SmallButton("X")) {
+                if (ImGui::SmallButton("X"))
+                {
                     editingActions.erase(editingActions.begin() + i);
                     --i;
                 }
@@ -109,7 +129,7 @@ void RenderMacroEditor() {
         ImGui::Text("Add Action:");
 
         static int inputTypeIndex = 0;
-        const char *inputTypes[] = {"Keyboard/Game Action", "Mouse Button", "Mouse Move"};
+        const char* inputTypes[] = {"Keyboard/Game Action", "Mouse Button", "Mouse Move"};
         ImGui::Combo("Input Type", &inputTypeIndex, inputTypes, 3);
 
         static EGameBinds selectedBind = GB_SkillWeapon1;
@@ -121,8 +141,9 @@ void RenderMacroEditor() {
         static int positionTypeIndex = 0;
         static bool usePosition = false;
 
-        if (inputTypeIndex == 0) {
-            const char *bindNames[] = {
+        if (inputTypeIndex == 0)
+        {
+            const char* bindNames[] = {
                 "Weapon 1", "Weapon 2", "Weapon 3", "Weapon 4", "Weapon 5",
                 "Heal Skill", "Utility 1", "Utility 2", "Utility 3", "Elite Skill",
                 "Profession 1", "Profession 2", "Profession 3", "Profession 4", "Profession 5",
@@ -143,8 +164,10 @@ void RenderMacroEditor() {
                 selectedBind = bindValues[bindIndex];
 
             ImGui::Checkbox("Press (uncheck = Release)", &isKeyDown);
-        } else if (inputTypeIndex == 1) {
-            const char *mouseButtonNames[] = {
+        }
+        else if (inputTypeIndex == 1)
+        {
+            const char* mouseButtonNames[] = {
                 "Left Click", "Right Click", "Middle Click", "Side Button 1 (X1)", "Side Button 2 (X2)"
             };
 
@@ -162,7 +185,8 @@ void RenderMacroEditor() {
             ImGui::Spacing();
             ImGui::Checkbox("Click at specific position", &usePosition);
 
-            if (usePosition) {
+            if (usePosition)
+            {
                 ImGui::Indent();
                 ImGui::SetNextItemWidth(120);
                 ImGui::InputInt("X Position", &mouseX);
@@ -170,10 +194,11 @@ void RenderMacroEditor() {
                 ImGui::SetNextItemWidth(120);
                 ImGui::InputInt("Y Position", &mouseY);
 
-                const char *posTypes[] = {"Absolute (Screen)", "Relative (Current)"};
+                const char* posTypes[] = {"Absolute (Screen)", "Relative (Current)"};
                 ImGui::Combo("Position Type", &positionTypeIndex, posTypes, 2);
 
-                if (ImGui::Button("Get Current Mouse Position")) {
+                if (ImGui::Button("Get Current Mouse Position"))
+                {
                     POINT cursorPos;
                     GetCursorPos(&cursorPos);
                     mouseX = cursorPos.x;
@@ -181,17 +206,20 @@ void RenderMacroEditor() {
                 }
                 ImGui::Unindent();
             }
-        } else if (inputTypeIndex == 2) {
+        }
+        else if (inputTypeIndex == 2)
+        {
             ImGui::SetNextItemWidth(120);
             ImGui::InputInt("X Position", &mouseX);
             ImGui::SameLine();
             ImGui::SetNextItemWidth(120);
             ImGui::InputInt("Y Position", &mouseY);
 
-            const char *posTypes[] = {"Absolute (Screen)", "Relative (Current)"};
+            const char* posTypes[] = {"Absolute (Screen)", "Relative (Current)"};
             ImGui::Combo("Position Type", &positionTypeIndex, posTypes, 2);
 
-            if (ImGui::Button("Get Current Mouse Position")) {
+            if (ImGui::Button("Get Current Mouse Position"))
+            {
                 POINT cursorPos;
                 GetCursorPos(&cursorPos);
                 mouseX = cursorPos.x;
@@ -207,20 +235,29 @@ void RenderMacroEditor() {
         ImGui::InputInt("Delay (ms)", &delayMs);
 
         ImGui::Spacing();
-        if (ImGui::Button("Add Action", ImVec2(120, 0))) {
-            if (inputTypeIndex == 0) {
+        if (ImGui::Button("Add Action", ImVec2(120, 0)))
+        {
+            if (inputTypeIndex == 0)
+            {
                 editingActions.emplace_back(selectedBind, isKeyDown, delayMs);
-            } else if (inputTypeIndex == 1) {
-                if (usePosition) {
+            }
+            else if (inputTypeIndex == 1)
+            {
+                if (usePosition)
+                {
                     const EPositionType posType = (positionTypeIndex == 0)
                                                       ? EPositionType::Absolute
                                                       : EPositionType::Relative;
                     MousePosition pos(mouseX, mouseY, posType);
                     editingActions.emplace_back(selectedMouseButton, isKeyDown, pos, delayMs);
-                } else {
+                }
+                else
+                {
                     editingActions.emplace_back(selectedMouseButton, isKeyDown, delayMs);
                 }
-            } else if (inputTypeIndex == 2) {
+            }
+            else if (inputTypeIndex == 2)
+            {
                 const EPositionType posType = (positionTypeIndex == 0)
                                                   ? EPositionType::Absolute
                                                   : EPositionType::Relative;
@@ -234,16 +271,18 @@ void RenderMacroEditor() {
             editingActions.clear();
 
         ImGui::Separator();
-        if (ImGui::Button("Save Macro", ImVec2(120, 0))) {
+        if (ImGui::Button("Save Macro", ImVec2(120, 0)))
+        {
             SaveMacro(macroName, selectedSlot, editingActions);
             editingActions.clear();
             lastSelectedMacroIndex = -2;
         }
         ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+        {
             editingActions.clear();
-            g_showMacroEditor = false;
-            g_selectedMacroIndex = -1;
+            g_context.showMacroEditor = false;
+            g_context.selectedMacroIndex = -1;
             lastSelectedMacroIndex = -2;
         }
     }
