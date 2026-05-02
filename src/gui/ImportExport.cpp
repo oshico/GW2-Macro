@@ -22,12 +22,14 @@ static int g_lastExportSlot = -1;
 static char g_statusMsg[256] = "";
 static float g_statusMsgTime = 0.0f;
 
-static void ShowStatus(const char* msg) {
+static void ShowStatus(const char* msg)
+{
     strncpy_s(g_statusMsg, msg, sizeof(g_statusMsg));
     g_statusMsgTime = ImGui::GetTime() + 3.0f;
 }
 
-static bool ClipboardSetText(const char* text) {
+static bool ClipboardSetText(const char* text)
+{
     if (!OpenClipboard(nullptr))
         return false;
 
@@ -35,13 +37,15 @@ static bool ClipboardSetText(const char* text) {
 
     size_t len = strlen(text);
     HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len + 1);
-    if (!hMem) {
+    if (!hMem)
+    {
         CloseClipboard();
         return false;
     }
 
     char* pMem = static_cast<char*>(GlobalLock(hMem));
-    if (!pMem) {
+    if (!pMem)
+    {
         GlobalFree(hMem);
         CloseClipboard();
         return false;
@@ -55,7 +59,8 @@ static bool ClipboardSetText(const char* text) {
     return true;
 }
 
-static std::string SaveFileDialog() {
+static std::string SaveFileDialog()
+{
     char filePath[MAX_PATH] = "";
 
     OPENFILENAME ofn;
@@ -74,7 +79,8 @@ static std::string SaveFileDialog() {
     return "";
 }
 
-static std::string OpenFileDialog() {
+static std::string OpenFileDialog()
+{
     char filePath[MAX_PATH] = "";
 
     OPENFILENAME ofn;
@@ -92,14 +98,16 @@ static std::string OpenFileDialog() {
     return "";
 }
 
-static std::string ReadFileToString(const std::string& path) {
+static std::string ReadFileToString(const std::string& path)
+{
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open())
         return "";
     return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 }
 
-static bool WriteStringToFile(const std::string& path, const std::string& content) {
+static bool WriteStringToFile(const std::string& path, const std::string& content)
+{
     std::ofstream file(path);
     if (!file.is_open())
         return false;
@@ -107,21 +115,24 @@ static bool WriteStringToFile(const std::string& path, const std::string& conten
     return true;
 }
 
-void RenderImportExport() {
+void RenderImportExport()
+{
     if (!g_context.showImportExport)
         return;
 
     ImGui::SetNextWindowSize(ImVec2(700, 500), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Import / Export Macros", &g_context.showImportExport)) {
-
-        if (ImGui::BeginTabBar("ImportExportTabs")) {
-
-            if (ImGui::BeginTabItem("Export")) {
+    if (ImGui::Begin("Import / Export Macros", &g_context.showImportExport))
+    {
+        if (ImGui::BeginTabBar("ImportExportTabs"))
+        {
+            if (ImGui::BeginTabItem("Export"))
+            {
                 const char* slotNames[10] = {
                     "Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5",
                     "Slot 6", "Slot 7", "Slot 8", "Slot 9", "Slot 10"
                 };
-                if (ImGui::Combo("Select Macro", &g_exportSlot, slotNames, 10) || g_lastExportSlot != g_exportSlot) {
+                if (ImGui::Combo("Select Macro", &g_exportSlot, slotNames, 10) || g_lastExportSlot != g_exportSlot)
+                {
                     g_lastExportSlot = g_exportSlot;
                     nlohmann::json j = MacroToJson(g_context.macros[g_exportSlot], g_exportSlot);
                     std::string jsonStr = j.dump(2);
@@ -132,21 +143,24 @@ void RenderImportExport() {
 
                 ImGui::Text("Macro JSON:");
                 ImGui::InputTextMultiline("##ExportJson",
-                    g_exportJsonBuffer, sizeof(g_exportJsonBuffer),
-                    ImVec2(-1, 250), ImGuiInputTextFlags_ReadOnly);
+                                          g_exportJsonBuffer, sizeof(g_exportJsonBuffer),
+                                          ImVec2(-1, 250), ImGuiInputTextFlags_ReadOnly);
 
                 ImGui::Spacing();
 
-                if (ImGui::Button("Copy to Clipboard", ImVec2(150, 0))) {
+                if (ImGui::Button("Copy to Clipboard", ImVec2(150, 0)))
+                {
                     if (ClipboardSetText(g_exportJsonBuffer))
                         ShowStatus("Copied to clipboard!");
                     else
                         ShowStatus("Failed to copy to clipboard!");
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Save to File", ImVec2(150, 0))) {
+                if (ImGui::Button("Save to File", ImVec2(150, 0)))
+                {
                     std::string path = SaveFileDialog();
-                    if (!path.empty()) {
+                    if (!path.empty())
+                    {
                         if (WriteStringToFile(path, g_exportJsonBuffer))
                             ShowStatus(("Saved to: " + path.substr(path.find_last_of("/\\") + 1)).c_str());
                         else
@@ -157,7 +171,8 @@ void RenderImportExport() {
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem("Import")) {
+            if (ImGui::BeginTabItem("Import"))
+            {
                 const char* slotNames[10] = {
                     "Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5",
                     "Slot 6", "Slot 7", "Slot 8", "Slot 9", "Slot 10"
@@ -167,24 +182,31 @@ void RenderImportExport() {
                 ImGui::Separator();
 
                 ImGui::Text("Paste Macro JSON:");
-                ImGui::InputTextMultiline("##ImportJson", g_importJsonBuffer, sizeof(g_importJsonBuffer), ImVec2(-1, 250));
+                ImGui::InputTextMultiline("##ImportJson", g_importJsonBuffer, sizeof(g_importJsonBuffer),
+                                          ImVec2(-1, 250));
 
                 ImGui::Spacing();
 
-                if (ImGui::Button("Load from File", ImVec2(150, 0))) {
+                if (ImGui::Button("Load from File", ImVec2(150, 0)))
+                {
                     std::string path = OpenFileDialog();
-                    if (!path.empty()) {
+                    if (!path.empty())
+                    {
                         std::string content = ReadFileToString(path);
-                        if (!content.empty()) {
+                        if (!content.empty())
+                        {
                             strncpy_s(g_importJsonBuffer, content.c_str(), sizeof(g_importJsonBuffer));
                             ShowStatus(("Loaded: " + path.substr(path.find_last_of("/\\") + 1)).c_str());
-                        } else {
+                        }
+                        else
+                        {
                             ShowStatus("Failed to read file!");
                         }
                     }
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Import Macro", ImVec2(150, 0))) {
+                if (ImGui::Button("Import Macro", ImVec2(150, 0)))
+                {
                     if (ImportMacroFromJson(g_importJsonBuffer, g_importSlot))
                         ShowStatus("Macro imported successfully!");
                     else
@@ -197,10 +219,13 @@ void RenderImportExport() {
             ImGui::EndTabBar();
         }
 
-        if (g_statusMsg[0] && ImGui::GetTime() < g_statusMsgTime) {
+        if (g_statusMsg[0] && ImGui::GetTime() < g_statusMsgTime)
+        {
             ImGui::Separator();
             ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "%s", g_statusMsg);
-        } else if (ImGui::GetTime() >= g_statusMsgTime) {
+        }
+        else if (ImGui::GetTime() >= g_statusMsgTime)
+        {
             g_statusMsg[0] = '\0';
         }
     }

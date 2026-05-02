@@ -1,18 +1,18 @@
 #include "AddonOptions.h"
+#include "../core/Context.h"
 #include "../macro/Macro.h"
 #include "../macro/MacroManager.h"
-#include "../core/Context.h"
 #include <imgui.h>
-
-extern Context g_context;
 
 void AddonOptions()
 {
-    ImGui::SetCurrentContext(static_cast<ImGuiContext *>(g_context.apiDefs->ImguiContext));
+    ImGui::SetCurrentContext(
+        static_cast<ImGuiContext*>(g_context.apiDefs->ImguiContext));
 
-    ImGui::Text("Macro Keybind Manager v0.3.0");
-    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
-                       "Execute sequences of game actions with precise timing control");
+    ImGui::Text("Macro Keybind Manager v2026.05.02.1230");
+    ImGui::TextColored(
+        ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
+        "Execute sequences of game actions with precise timing control");
 
     ImGui::Spacing();
 
@@ -28,7 +28,7 @@ void AddonOptions()
         int activeMacros = 0;
         int totalActions = 0;
 
-        for (const auto &macro : g_context.macros)
+        for (const auto& macro : g_context.macros)
         {
             if (!macro.actions.empty() && macro.name != "Empty")
                 ++activeMacros;
@@ -53,17 +53,21 @@ void AddonOptions()
     if (ImGui::CollapsingHeader("Usage Tips"))
     {
         ImGui::BulletText("Each macro can contain unlimited actions");
-        ImGui::BulletText("Use delays between actions for timing-sensitive sequences");
-        ImGui::BulletText("Press and Release actions allow for held key combinations");
-        ImGui::BulletText("Mouse position support for clicking at specific coordinates");
+        ImGui::BulletText(
+            "Use delays between actions for timing-sensitive sequences");
+        ImGui::BulletText(
+            "Press and Release actions allow for held key combinations");
+        ImGui::BulletText(
+            "Mouse position support for clicking at specific coordinates");
         ImGui::BulletText("Disable macros to prevent accidental execution");
     }
 
     if (ImGui::CollapsingHeader("Macro Usage Policy"))
     {
-        ImGui::TextWrapped("Attended macro use is permitted as long as it is not exploitative, "
-                           "and as long as it does not provide the user with an unfair advantage. "
-                           "Unattended macro use is prohibited.");
+        ImGui::TextWrapped(
+            "Attended macro use is permitted as long as it is not exploitative, "
+            "and as long as it does not provide the user with an unfair advantage. "
+            "Unattended macro use is prohibited.");
 
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.6f, 1.0f, 0.6f, 1.0f), "Allowed Macros:");
@@ -85,11 +89,12 @@ void AddonOptions()
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f), "Important:");
         ImGui::TextWrapped("This addon automatically disables macros in PvP/WvW "
-                           "to comply with policy, but you are still responsible "
-                           "for following the game's ToS.");
+            "to comply with policy, but you are still responsible "
+            "for following the game's ToS.");
 
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.2f, 1.0f), "Warning:");
-        ImGui::TextWrapped("Violation of these policies may result in account restrictions.");
+        ImGui::TextWrapped(
+            "Violation of these policies may result in account restrictions.");
     }
 }

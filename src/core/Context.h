@@ -6,7 +6,8 @@
 #include <mutex>
 #include <atomic>
 
-struct Context {
+struct Context
+{
     std::vector<Macro> macros;
     bool showMainWindow = false;
     bool showMacroEditor = false;
