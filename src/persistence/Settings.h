@@ -1,8 +1,5 @@
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#pragma once
 
 bool SaveMacrosToJson();
 
 bool LoadMacrosFromJson();
-
-#endif

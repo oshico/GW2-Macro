@@ -1,5 +1,4 @@
-#ifndef STRING_CONVERSIONS_H
-#define STRING_CONVERSIONS_H
+#pragma once
 
 #include "../macro/Macro.h"
 
@@ -18,5 +17,3 @@ EMouseButton StringToMouseButton(const std::string &buttonStr);
 std::string PositionTypeToString(EPositionType type);
 
 EPositionType StringToPositionType(const std::string &typeStr);
-
-#endif

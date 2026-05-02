@@ -1,9 +1,10 @@
 #include "AddonLifecycle.h"
-#include "Shared.h"
+#include "Context.h"
 #include "../macro/MacroManager.h"
 #include "../macro/KeybindManager.h"
 #include "../gui/MainWindow.h"
 #include "../gui/MacroEditor.h"
+#include "../gui/ImportExport.h"
 #include "../gui/AddonOptions.h"
 #include "../persistence/Settings.h"
 #include <imgui.h>
@@ -14,6 +15,7 @@
 #include "Resource.h"
 
 AddonDefinition_t AddonDef{};
+extern Context g_context;
 
 extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef() {
     AddonDef.Signature = 0xA1B2C3D4;
@@ -35,57 +37,55 @@ extern "C" __declspec(dllexport) AddonDefinition_t *GetAddonDef() {
 }
 
 void AddonLoad(AddonAPI_t *aApi) {
-    APIDefs = aApi;
-    APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Keybind Manager v0.3.0 loaded!");
-    ImGui::SetCurrentContext(static_cast<ImGuiContext *>(APIDefs->ImguiContext));
+    g_context.apiDefs = aApi;
+    g_context.apiDefs->Log(LOGL_INFO, "MacroManager", "Macro Keybind Manager v0.3.0 loaded!");
+    ImGui::SetCurrentContext(static_cast<ImGuiContext *>(g_context.apiDefs->ImguiContext));
 
-    ImGui::SetAllocatorFunctions(reinterpret_cast<void*(*)(size_t, void *)>(APIDefs->ImguiMalloc),
-                                 reinterpret_cast<void(*)(void *, void *)>(APIDefs->ImguiFree));
+    ImGui::SetAllocatorFunctions(reinterpret_cast<void*(*)(size_t, void *)>(g_context.apiDefs->ImguiMalloc),
+                                 reinterpret_cast<void(*)(void *, void *)>(g_context.apiDefs->ImguiFree));
 
-    //ImGui::SetAllocatorFunctions((void *(*)(size_t, void *)) APIDefs->ImguiMalloc,(void (*)(void *, void *)) APIDefs->ImguiFree);
-    //ImGui::SetAllocatorFunctions(APIDefs->ImguiMalloc, APIDefs->ImguiFree);
+    g_context.apiDefs->Textures_GetOrCreateFromResource("MACRO_MANAGER_ICON", IDB_MACRO_MANAGER_ICON, GetAddonModuleHandle());
 
-    APIDefs->Textures_GetOrCreateFromResource("MACRO_MANAGER_ICON", IDB_MACRO_MANAGER_ICON, GetAddonModuleHandle());
-
-    APIDefs->QuickAccess_Add("MACRO_MANAGER_SHORTCUT", "MACRO_MANAGER_ICON", "MACRO_MANAGER_ICON", "MACRO_SHOW_WINDOW",
+    g_context.apiDefs->QuickAccess_Add("MACRO_MANAGER_SHORTCUT", "MACRO_MANAGER_ICON", "MACRO_MANAGER_ICON", "MACRO_SHOW_WINDOW",
                              "Open Macro Manager");
 
-    APIDefs->GUI_Register(RT_Render, AddonRender);
-    APIDefs->GUI_Register(RT_OptionsRender, AddonOptions);
+    g_context.apiDefs->GUI_Register(RT_Render, AddonRender);
+    g_context.apiDefs->GUI_Register(RT_OptionsRender, AddonOptions);
 
     LoadMacrosFromJson();
 
-    for (const auto &macro: g_macros)
+    for (const auto &macro: g_context.macros)
         UnregisterKeybind(macro.identifier);
 
-    for (auto &macro: g_macros)
+    for (auto &macro: g_context.macros)
         macro.enabled = false;
 
     SetupKeybinds();
 }
 
 void AddonUnload() {
-    if (APIDefs) {
+    if (g_context.apiDefs) {
         KillAllMacros();
         SaveMacrosToJson();
 
-        for (const auto &macro: g_macros)
+        for (const auto &macro: g_context.macros)
             UnregisterKeybind(macro.identifier);
 
-        APIDefs->QuickAccess_Remove("MACRO_MANAGER_SHORTCUT");
+        g_context.apiDefs->QuickAccess_Remove("MACRO_MANAGER_SHORTCUT");
 
-        APIDefs->GUI_Deregister(AddonRender);
-        APIDefs->GUI_Deregister(AddonOptions);
+        g_context.apiDefs->GUI_Deregister(AddonRender);
+        g_context.apiDefs->GUI_Deregister(AddonOptions);
 
-        APIDefs->InputBinds_Deregister("MACRO_SHOW_WINDOW");
-        APIDefs->InputBinds_Deregister("MACRO_KILL");
+        g_context.apiDefs->InputBinds_Deregister("MACRO_SHOW_WINDOW");
+        g_context.apiDefs->InputBinds_Deregister("MACRO_KILL");
 
-        APIDefs->Log(LOGL_INFO, "MacroManager", "Macro Manager unloaded!");
+        g_context.apiDefs->Log(LOGL_INFO, "MacroManager", "Macro Manager unloaded!");
     }
 }
 
 void AddonRender() {
-    ImGui::SetCurrentContext(static_cast<ImGuiContext *>(APIDefs->ImguiContext));
+    ImGui::SetCurrentContext(static_cast<ImGuiContext *>(g_context.apiDefs->ImguiContext));
     RenderMainWindow();
     RenderMacroEditor();
+    RenderImportExport();
 }

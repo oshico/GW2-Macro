@@ -1,7 +1,7 @@
-#ifndef MACRO_H
-#define MACRO_H
+#pragma once
 
 #include "../nexus/Nexus.h"
+#include "../nlohmann/json.hpp"
 #include <vector>
 #include <string>
 
@@ -82,4 +82,6 @@ struct Macro {
     }
 };
 
-#endif
+nlohmann::json MacroToJson(const Macro& macro, int slot);
+
+Macro JsonToMacro(const nlohmann::json& j, int slot);

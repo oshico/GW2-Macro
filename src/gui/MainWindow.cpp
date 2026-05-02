@@ -2,18 +2,20 @@
 #include "../macro/Macro.h"
 #include "../macro/MacroManager.h"
 #include "../compliance/GameModeCheck.h"
-#include "../core/Shared.h"
+#include "../core/Context.h"
 #include <imgui.h>
 #include <cstring>
 
 #include "Settings.h"
 
+extern Context g_context;
+
 void RenderMainWindow() {
-    if (!g_showMainWindow)
+    if (!g_context.showMainWindow)
         return;
 
     ImGui::SetNextWindowSize(ImVec2(650, 420), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Macro Manager", &g_showMainWindow)) {
+    if (ImGui::Begin("Macro Manager", &g_context.showMainWindow)) {
         ImGui::BeginChild("StatusBanner", ImVec2(0, 40), true);
         {
             ImVec4 statusColor;
@@ -52,8 +54,8 @@ void RenderMainWindow() {
                 ImGui::TableSetupColumn("Delete", ImGuiTableColumnFlags_WidthFixed, 70.0f);
                 ImGui::TableHeadersRow();
 
-                for (size_t i = 0; i < g_macros.size(); ++i) {
-                    Macro &macro = g_macros[i];
+                for (size_t i = 0; i < g_context.macros.size(); ++i) {
+                    Macro &macro = g_context.macros[i];
                     ImGui::TableNextRow();
 
                     ImGui::TableSetColumnIndex(0);
@@ -90,6 +92,9 @@ void RenderMainWindow() {
 
         if (ImGui::Button("Create New Macro", ImVec2(-1, 0)))
             OpenMacroEditor();
+
+        if (ImGui::Button("Import / Export", ImVec2(-1, 0)))
+            g_context.showImportExport = true;
     }
     ImGui::End();
 }

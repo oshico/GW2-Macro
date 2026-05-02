@@ -2,15 +2,16 @@
 #include <cstring>
 
 #include "MacroExecutor.h"
-#include "Shared.h"
+#include "../core/Context.h"
+
+extern Context g_context;
 
 void ProcessKeybind(const char *aIdentifier, const bool aIsRelease) {
     if (aIsRelease)
         return;
 
     if (strcmp(aIdentifier, "MACRO_SHOW_WINDOW") == 0) {
-        extern bool g_showMainWindow;
-        g_showMainWindow = !g_showMainWindow;
+        g_context.showMainWindow = !g_context.showMainWindow;
         return;
     }
 
@@ -19,53 +20,53 @@ void ProcessKeybind(const char *aIdentifier, const bool aIsRelease) {
         return;
     }
 
-    if (g_macroMutex.try_lock()) {
-        if (g_killMacros.load()) {
-            g_macroMutex.unlock();
+    if (g_context.macroMutex.try_lock()) {
+        if (g_context.killMacros.load()) {
+            g_context.macroMutex.unlock();
             return;
         }
 
-        for (const auto &macro: g_macros) {
+        for (const auto &macro: g_context.macros) {
             if (macro.identifier == aIdentifier) {
                 ExecuteMacro(macro);
                 break;
             }
         }
-        g_macroMutex.unlock();
+        g_context.macroMutex.unlock();
     } else {
-        if (APIDefs) {
-            APIDefs->GUI_SendAlert("Another macro is currently running. Wait or use Kill All.");
+        if (g_context.apiDefs) {
+            g_context.apiDefs->GUI_SendAlert("Another macro is currently running. Wait or use Kill All.");
         }
     }
 }
 
 void SetupKeybinds() {
-    if (!APIDefs)
+    if (!g_context.apiDefs)
         return;
 
-    APIDefs->InputBinds_RegisterWithString("MACRO_SHOW_WINDOW", ProcessKeybind, "CTRL+SHIFT+K");
-    APIDefs->InputBinds_RegisterWithString("MACRO_KILL", ProcessKeybind, "CTRL+SHIFT+X");
+    g_context.apiDefs->InputBinds_RegisterWithString("MACRO_SHOW_WINDOW", ProcessKeybind, "CTRL+SHIFT+K");
+    g_context.apiDefs->InputBinds_RegisterWithString("MACRO_KILL", ProcessKeybind, "CTRL+SHIFT+X");
 
-    for (const auto &macro: g_macros)
+    for (const auto &macro: g_context.macros)
         RegisterKeybind(macro);
 }
 
 void RegisterKeybind(const Macro &macro) {
-    if (!APIDefs)
+    if (!g_context.apiDefs)
         return;
 
-    APIDefs->InputBinds_RegisterWithString(macro.identifier.c_str(), ProcessKeybind, "");
+    g_context.apiDefs->InputBinds_RegisterWithString(macro.identifier.c_str(), ProcessKeybind, "");
 
-    APIDefs->Log(
+    g_context.apiDefs->Log(
         LOGL_DEBUG,
         "MacroManager",
         ("Keybind registered for: " + macro.identifier).c_str());
 }
 
 void UnregisterKeybind(const std::string &identifier) {
-    if (APIDefs) {
-        APIDefs->InputBinds_Deregister(identifier.c_str());
-        APIDefs->Log(
+    if (g_context.apiDefs) {
+        g_context.apiDefs->InputBinds_Deregister(identifier.c_str());
+        g_context.apiDefs->Log(
             LOGL_DEBUG,
             "MacroManager",
             ("Keybind unregistered: " + identifier).c_str());

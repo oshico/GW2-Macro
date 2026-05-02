@@ -14,7 +14,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Note: Headers are NOT needed in SOURCES - they're found via include directories
 # =============================================================================
 file(GLOB SOURCES
-        "src/main.cpp"
         "src/Resource.rc"
         "src/core/*.cpp"
         "src/macro/*.cpp"
@@ -93,6 +92,8 @@ target_compile_options(Macro PRIVATE
 #   -s                                : Strip symbols in release (smaller DLL)
 #   -flto                             : Link-time optimization (matches compile flag)
 # =============================================================================
+target_link_libraries(Macro PRIVATE comdlg32)
+
 target_link_options(Macro PRIVATE
         -static
         -static-libgcc

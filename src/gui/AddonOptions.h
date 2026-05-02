@@ -1,6 +1,3 @@
-#ifndef ADDON_OPTIONS_H
-#define ADDON_OPTIONS_H
+#pragma once
 
 void AddonOptions();
-
-#endif

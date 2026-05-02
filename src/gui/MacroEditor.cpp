@@ -2,13 +2,15 @@
 #include "../macro/Macro.h"
 #include "../macro/MacroManager.h"
 #include "../utils/StringConversions.h"
-#include "../core/Shared.h"
+#include "../core/Context.h"
 #include <imgui.h>
 #include <cstring>
 #include <windows.h>
 
+extern Context g_context;
+
 void RenderMacroEditor() {
-    if (!g_showMacroEditor)
+    if (!g_context.showMacroEditor)
         return;
 
     static char macroName[128] = "";
@@ -16,9 +18,9 @@ void RenderMacroEditor() {
     static int lastSelectedMacroIndex = -2;
     static int selectedSlot = 0;
 
-    if (g_selectedMacroIndex != lastSelectedMacroIndex) {
-        if (g_selectedMacroIndex >= 0 && g_selectedMacroIndex < static_cast<int>(g_macros.size())) {
-            const Macro &macro = g_macros[g_selectedMacroIndex];
+    if (g_context.selectedMacroIndex != lastSelectedMacroIndex) {
+        if (g_context.selectedMacroIndex >= 0 && g_context.selectedMacroIndex < static_cast<int>(g_context.macros.size())) {
+            const Macro &macro = g_context.macros[g_context.selectedMacroIndex];
             strncpy_s(macroName, sizeof(macroName), macro.name.c_str(), _TRUNCATE);
             editingActions = macro.actions;
 
@@ -29,11 +31,11 @@ void RenderMacroEditor() {
             editingActions.clear();
             selectedSlot = 0;
         }
-        lastSelectedMacroIndex = g_selectedMacroIndex;
+        lastSelectedMacroIndex = g_context.selectedMacroIndex;
     }
 
     ImGui::SetNextWindowSize(ImVec2(800, 650), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Macro Editor", &g_showMacroEditor)) {
+    if (ImGui::Begin("Macro Editor", &g_context.showMacroEditor)) {
         ImGui::InputText("Macro Name", macroName, sizeof(macroName));
 
         ImGui::Separator();
@@ -242,8 +244,8 @@ void RenderMacroEditor() {
         ImGui::SameLine();
         if (ImGui::Button("Cancel", ImVec2(120, 0))) {
             editingActions.clear();
-            g_showMacroEditor = false;
-            g_selectedMacroIndex = -1;
+            g_context.showMacroEditor = false;
+            g_context.selectedMacroIndex = -1;
             lastSelectedMacroIndex = -2;
         }
     }

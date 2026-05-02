@@ -1,5 +1,4 @@
-#ifndef GAME_MODE_CHECKS_H
-#define GAME_MODE_CHECKS_H
+#pragma once
 
 bool IsInCompetitiveMode();
 
@@ -8,5 +7,3 @@ bool IsInPVEMode();
 const char *GetCurrentGameModeString();
 
 bool AreMacrosAllowed();
-
-#endif

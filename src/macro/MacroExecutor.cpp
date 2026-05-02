@@ -5,8 +5,10 @@
 #include <windows.h>
 
 #include "GameModeCheck.h"
-#include "Shared.h"
+#include "../core/Context.h"
 #include "StringConversions.h"
+
+extern Context g_context;
 
 void MoveMouse(const MousePosition &pos) {
     if (pos.positionType == EPositionType::Absolute) {
@@ -19,7 +21,7 @@ void MoveMouse(const MousePosition &pos) {
 }
 
 void SendMouseInput(const EMouseButton button, const bool isDown) {
-    if (!APIDefs)
+    if (!g_context.apiDefs)
         return;
 
     INPUT input = {};
@@ -59,43 +61,43 @@ void ExecuteMacro(const Macro &macro) {
         return;
 
     if (!AreMacrosAllowed()) {
-        APIDefs->GUI_SendAlert("Macros disabled in PVP/WvW modes");
+        g_context.apiDefs->GUI_SendAlert("Macros disabled in PVP/WvW modes");
         return;
     }
 
-    APIDefs->Log(LOGL_INFO, "MacroManager", ("Executing macro: " + macro.name).c_str());
+    g_context.apiDefs->Log(LOGL_INFO, "MacroManager", ("Executing macro: " + macro.name).c_str());
 
     for (const auto &action: macro.actions) {
-        if (g_killMacros.load()) {
-            APIDefs->Log(LOGL_INFO, "MacroManager", "Macro execution stopped by Kill All");
-            g_killMacros.store(false);
+        if (g_context.killMacros.load()) {
+            g_context.apiDefs->Log(LOGL_INFO, "MacroManager", "Macro execution stopped by Kill All");
+            g_context.killMacros.store(false);
             return;
         }
 
         if (action.delayMs > 0) {
             int remainingDelay = action.delayMs;
 
-            while (remainingDelay > 0 && !g_killMacros.load()) {
+            while (remainingDelay > 0 && !g_context.killMacros.load()) {
                 constexpr int chunkSize = 50;
                 int currentChunk = (remainingDelay > chunkSize) ? chunkSize : remainingDelay;
                 std::this_thread::sleep_for(std::chrono::milliseconds(currentChunk));
                 remainingDelay -= currentChunk;
             }
 
-            if (g_killMacros.load()) {
-                APIDefs->Log(LOGL_INFO, "MacroManager", "Macro execution stopped during delay");
-                g_killMacros.store(false);
+            if (g_context.killMacros.load()) {
+                g_context.apiDefs->Log(LOGL_INFO, "MacroManager", "Macro execution stopped during delay");
+                g_context.killMacros.store(false);
                 return;
             }
         }
 
         if (action.inputType == EInputType::GameBind) {
             if (action.isKeyDown)
-                APIDefs->GameBinds_PressAsync(action.gameBind);
+                g_context.apiDefs->GameBinds_PressAsync(action.gameBind);
             else
-                APIDefs->GameBinds_ReleaseAsync(action.gameBind);
+                g_context.apiDefs->GameBinds_ReleaseAsync(action.gameBind);
 
-            APIDefs->Log(
+            g_context.apiDefs->Log(
                 LOGL_DEBUG,
                 "MacroManager",
                 ("Action executed: " +
@@ -106,7 +108,7 @@ void ExecuteMacro(const Macro &macro) {
             if (action.moveBeforeClick) {
                 SendMouseClickAtPosition(action.mouseButton, action.isKeyDown, action.mousePosition);
 
-                APIDefs->Log(
+                g_context.apiDefs->Log(
                     LOGL_DEBUG,
                     "MacroManager",
                     ("Mouse action at (" + std::to_string(action.mousePosition.x) + ", " +
@@ -117,7 +119,7 @@ void ExecuteMacro(const Macro &macro) {
             } else {
                 SendMouseInput(action.mouseButton, action.isKeyDown);
 
-                APIDefs->Log(
+                g_context.apiDefs->Log(
                     LOGL_DEBUG,
                     "MacroManager",
                     ("Mouse action executed: " +
@@ -128,7 +130,7 @@ void ExecuteMacro(const Macro &macro) {
         } else if (action.inputType == EInputType::MouseMove) {
             MoveMouse(action.mousePosition);
 
-            APIDefs->Log(
+            g_context.apiDefs->Log(
                 LOGL_DEBUG,
                 "MacroManager",
                 ("Mouse moved to (" + std::to_string(action.mousePosition.x) + ", " +
@@ -138,24 +140,24 @@ void ExecuteMacro(const Macro &macro) {
         }
     }
 
-    APIDefs->Log(LOGL_INFO, "MacroManager", ("Macro completed: " + macro.name).c_str());
+    g_context.apiDefs->Log(LOGL_INFO, "MacroManager", ("Macro completed: " + macro.name).c_str());
 }
 
 void KillAllMacros() {
-    g_killMacros.store(true);
+    g_context.killMacros.store(true);
 
-    std::lock_guard<std::mutex> lock(g_macroMutex);
+    std::lock_guard<std::mutex> lock(g_context.macroMutex);
 
-    g_killMacros.store(false);
+    g_context.killMacros.store(false);
 
     ReleaseAllGameKeys();
 
-    APIDefs->Log(LOGL_INFO, "MacroManager", "All macros killed");
-    APIDefs->GUI_SendAlert("All macros stopped");
+    g_context.apiDefs->Log(LOGL_INFO, "MacroManager", "All macros killed");
+    g_context.apiDefs->GUI_SendAlert("All macros stopped");
 }
 
 void ReleaseAllGameKeys() {
-    if (!APIDefs)
+    if (!g_context.apiDefs)
         return;
 
     EGameBinds allBinds[] = {
@@ -167,13 +169,13 @@ void ReleaseAllGameKeys() {
         GB_SkillProfession4, GB_SkillProfession5, GB_SkillProfession6, GB_SkillProfession7
     };
 
-    APIDefs->Log(LOGL_DEBUG, "MacroManager", "Releasing all game keys...");
+    g_context.apiDefs->Log(LOGL_DEBUG, "MacroManager", "Releasing all game keys...");
 
     for (const EGameBinds bind: allBinds) {
-        APIDefs->GameBinds_ReleaseAsync(bind);
+        g_context.apiDefs->GameBinds_ReleaseAsync(bind);
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-    APIDefs->Log(LOGL_INFO, "MacroManager", "All game keys released");
+    g_context.apiDefs->Log(LOGL_INFO, "MacroManager", "All game keys released");
 }

@@ -1,12 +1,14 @@
 #include "AddonOptions.h"
 #include "../macro/Macro.h"
 #include "../macro/MacroManager.h"
-#include "../core/Shared.h"
+#include "../core/Context.h"
 #include <imgui.h>
+
+extern Context g_context;
 
 void AddonOptions()
 {
-    ImGui::SetCurrentContext(static_cast<ImGuiContext *>(APIDefs->ImguiContext));
+    ImGui::SetCurrentContext(static_cast<ImGuiContext *>(g_context.apiDefs->ImguiContext));
 
     ImGui::Text("Macro Keybind Manager v0.3.0");
     ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
@@ -26,7 +28,7 @@ void AddonOptions()
         int activeMacros = 0;
         int totalActions = 0;
 
-        for (const auto &macro : g_macros)
+        for (const auto &macro : g_context.macros)
         {
             if (!macro.actions.empty() && macro.name != "Empty")
                 ++activeMacros;
@@ -40,7 +42,7 @@ void AddonOptions()
     ImGui::Spacing();
 
     if (ImGui::Button("Open Macro Manager"))
-        g_showMainWindow = true;
+        g_context.showMainWindow = true;
 
     ImGui::SameLine();
     if (ImGui::Button("Create New Macro"))
