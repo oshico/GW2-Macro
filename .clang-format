@@ -1,0 +1,16 @@
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+ColumnLimit: 0
+
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+
+BinPackArguments: true
+BinPackParameters: true
+
+BreakBeforeBraces: Attach
+
+SpaceBeforeParens: ControlStatements
+KeepEmptyLinesAtTheStartOfBlocks: false
