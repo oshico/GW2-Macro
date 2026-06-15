@@ -1,4 +1,0 @@
-#include "Resource.h"
-#include "windows.h"
-
-IDB_MACRO_MANAGER_ICON PNG "macro.png"

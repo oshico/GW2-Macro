@@ -3,65 +3,49 @@
     <img src="https://discord.com/api/guilds/410828272679518241/widget.png?style=banner2">
   </a>
 </p>
-<p align="center">
-  <a href="https://github.com/oshico/GW2-MACRO/releases">
-    <img src="https://img.shields.io/github/downloads/oshico/GW2-MACRO/total?style=for-the-badge"  alt="downloads"/>
-  </a>
-  <a href="https://github.com/oshico/GW2-MACRO/releases">
-    <img src="https://img.shields.io/github/v/release/oshico/GW2-MACRO?style=for-the-badge" alt="releases">
-  </a>
-</p>
 
 ---
 
-# 🔧 GW2-Macro Manager Addon
+# 🔧 GW2-Macro Manager
 
-A C++ toolkit for managing **Guild Wars 2 macros** via the **Nexus Loader**.  
-It integrates with the **Nexus API**, uses **ImGui** for its GUI, and supports cross-platform builds (Linux → Windows).
-
-👉 A prebuilt **.dll release** is already available for players who just want to use the addon.  
-👉 Developers or testers can also **compile it themselves** by following the quick guide below.
+A **Guild Wars 2** addon for macro managing using **Nexus**.
+ 
+U can install ingame via nexus library or following the manual install guide below.
 
 ---
 
 ## 📦 Features
 
-- **Manage up to 10 macros** simultaneously
-- **Customizable macro keybinds** through Nexus Loader
+- **10 macro slots**
+- **Customizable macro keybinds** using nexus ingame binds
 - **Macro actions** include:
-  - Key presses
-  - Key releases
-  - Delays
+    - Key press
+    - Key release
+    - Delay
 - **Allowed macro keys**:
-  - Weapon Actions
-  - Utility Skills
-  - Weapon Swap
-  - Dodge
-  - Jump
+    - Weapon Skills
+    - Utility Skills
+    - Weapon Swap
+    - Dodge
+    - Jump
+    - Mouse Click
+    - Mouse Movement
 
 ---
 
-# ⚡ How to Use (Prebuilt DLL)
+# ⚡ How to Install(Manual)
 
-1. Download the latest `.dll` from the [Releases](./releases) page.
+1. Download the latest `.dll` from the [Releases](./releases) page or compile urself.
 2. Copy it into your **Guild Wars 2 addons folder**.
 3. Launch GW2 and enable the macro manager via **Nexus Loader**.
 
 ---
 
-# 🛠️ Compiling It Yourself (Optional)
+# 🛠️ Compiling
 
 ## ✅ Prerequisites
-
-- **Linux** (for cross-compiling to Windows)
 - **C++17 or higher**
 - **CMake 3.15+**
-- **Nexus API headers + libraries**
-- **ImGui library**
-
----
-
-## 🚀 Quick Start
 
 ```bash
 # 1. Clone the repository

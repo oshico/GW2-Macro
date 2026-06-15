@@ -1,33 +1,31 @@
 #!/bin/bash
 
-# Nexus Addon Build Script
-# Supports both Debug and Release builds for cross-compilation (Linux -> Windows)
-# 
 # Usage:
-#   ./build.sh          # Build in Release mode (default, optimized)
-#   ./build.sh Debug    # Build in Debug mode (with symbols)
+# ./build.sh          # Build in Release mode
+# ./build.sh Debug    # Build in Debug mode with symbols
 
-set -e  # Exit on any error
+# Exits on any error
+set -e
 
-BUILD_TYPE="${1:-Release}"  # Default to Release, pass "Debug" for debug build
+# Read build type variable and set default to Release
+BUILD_TYPE="${1:-Release}"
 
 echo "=== Building in ${BUILD_TYPE} mode ==="
 
 # Check if MinGW-w64 is installed
 if ! command -v x86_64-w64-mingw32-gcc &> /dev/null; then
-    echo "Error: x86_64-w64-mingw32-gcc not found. Install with:"
-    echo "  sudo pacman -S mingw-w64-gcc"
+    echo "Error: x86_64-w64-mingw32-gcc not found."
     exit 1
 fi
 
-# Clean previous build
+# Clean previous build files
 echo "Cleaning previous build..."
 if [ -d "build" ]; then
     rm -rf build
     echo "Removed existing build directory"
 fi
 
-# Create fresh build directory
+# Creat build directory
 echo "Creating build directory..."
 mkdir build
 cd build
@@ -41,8 +39,8 @@ cmake .. \
     -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres \
     -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 
-# Build the project
-echo "Building addon..."
+# Build Macro Manager
+echo "Building Macro Manager..."
 make -j$(nproc)
 
 # Check if build was successful

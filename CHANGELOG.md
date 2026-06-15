@@ -1,63 +1,39 @@
-# Macro Keybind Manager v2026.05.02.1230
+# Changelog — Macro Keybind Manager
 
-**Macro Keybind Manager** is a Guild Wars 2 Nexus addon that lets you create and execute powerful custom macros using in-game actions, keybinds, and now mouse input — all fully integrated with the Nexus keybind system.
+## v2026.06.15.1400
 
-## 🚀 What’s New in v2026.05.02.1230
+### What changed
 
-Managing and sharing macros just got a whole lot easier.
+- **Massively expanded the list of supported game binds.** You can now use just about everything Nexus exposes — targeting, UI panels, camera controls, mounts, masteries, map, screenshots, toys, build and equipment templates, and a bunch of misc actions like AoE loot or stow/draw weapons. The only things left out are character movement (forward/strafe/etc.), spectator binds, and squad markers, since those don't really belong in a macro tool. About Face did make the cut though.
 
-- 🔄 **Import Macros from JSON**
-  - Load macros from external `.json` files
-  - Supports full macro configurations, including timing and inputs
-  - Seamless integration into your existing macro list
+- **Picked a category first, then the action.** Instead of one giant flat dropdown, the editor now has two combos: pick a category (Skills, Targeting, Mounts, etc.), then pick the specific action. Makes it way easier to find what you're looking for.
 
-- 💾 **Export Macros to JSON**
-  - Save individual or multiple macros as `.json` files
-  - Perfect for backups, sharing, or transferring setups between systems
+- **Fixed the CI build.** The workflow was missing `submodules: recursive` on checkout, so the build would fail on GitHub runners since imgui, mumble, and nexus live in submodules now.
 
-- 📋 **Clipboard Support**
-  - Copy macros directly to your clipboard as JSON
-  - Paste macros instantly without needing to create files
-  - Great for quick sharing between players
+- **Cleaned up header files.** All those `extern` keywords on function declarations were just noise — in C++ they're implicit at namespace scope. Only `shared.h` still uses them (for global variables, where it actually matters).
 
-- 🗂️ **Native File Dialog Integration**
-  - Uses Windows file selection dialogs for importing/exporting
-  - Familiar and user-friendly file browsing experience
+### Supported actions now
 
-## ✨ Features
+Movement: Dodge, Jump, About Face.
 
-- **Advanced Macro Creation** Create complex macros combining keyboard actions, profession skills, and mouse input
-- **Mouse Click & Movement Support** Simulate mouse clicks and precise cursor movement as part of your macros
-- **Full Skill Coverage** Supports weapon skills, profession skills, utilities, elite skills, and core actions
-- **Precise Timing Control** Add customizable delays between actions for frame-perfect execution
-- **Easy Macro Management** Intuitive GUI to create, edit, enable/disable, and delete macros
-- **Macro Import & Export (NEW)** Save, share, and restore macros using JSON files or clipboard
-- **Persistent Keybinds** Macro keybinds persist across game restarts
-- **Nexus Keybind Integration** Assign and manage macro hotkeys directly from Nexus settings
-- **Real-time Macro Preview** Instantly see your macro sequence as you build it
+Skills: Weapon 1–5, Heal, Utility 1–3, Elite, Profession 1–7, Weapon Swap, Special Action.
 
-## 📋 Supported Game Actions
+Targeting: Take/Call/Alert target, nearest/next/previous enemy or ally, lock target, snap ground target, auto-targeting toggles, ally targeting modes.
 
-- Weapon Skills (1–5)
-- Profession Skills
-- Heal Skill
-- Utility Skills (1–3)
-- Elite Skill
-- Dodge
-- Jump / Swim Up / Fly Up
-- Interact
-- Weapon Swap
-- Mouse Clicks (Left / Right / Middle)
-- Mouse Movement (X/Y)
+UI: Trading Post, Contacts, Guild, Hero, Inventory, Pets, Logout, Mail, Options, Party, PvP, PvP Build, Scoreboard, Wizard's Vault, Information, chat commands/focus/reply/toggle, squad broadcast chat.
 
-## ⌨️ Default Controls
+Camera: Free Camera, Zoom In/Out, Reverse, Action Mode.
 
-- `Ctrl + Shift + K` — Toggle Macro Manager window
-- `Ctrl + Shift + X` — Stop all running macros
-- All macro keybinds are fully customizable via Nexus settings
-- Macros execute through Guild Wars 2’s game bind system for maximum safety and compatibility
+Screenshots: Normal, Stereoscopic.
 
-## 🤝 Contributing
+Map: Toggle, Focus Player, Floor Up/Down, Zoom In/Out.
 
-Found a bug or have a feature request?
-Feel free to open an issue or submit a pull request — contributions are always welcome!
+Mounts: Mount/Dismount, Mount Ability 1/2, all nine mounts (Raptor through Siege Turtle).
+
+Mastery: Mastery, Fishing, Skiff, Jade Bot Waypoint, Rift Scan, Skyscale, Homestead Doorway.
+
+Misc: AoE Loot, Interact, Show Enemies/Allies, Stow/Draw Weapons, Toggle Language, Toggle Pet Combat, Toggle Fullscreen, Toggle Decorate Mode.
+
+Toys: Default, Chair, Instrument, Held Item, Toy, Tonic.
+
+Build Templates 1–9, Equipment Templates 1–9.
